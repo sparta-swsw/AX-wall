@@ -201,7 +201,6 @@ export default function WallPage() {
               .map((group) => {
               const color = getAuthorColor(group.name, members);
               const member = members.find((m) => m.name === group.name);
-              const isMe = group.name === currentUser.name;
               const isCollapsed = collapsed.has(group.name);
               return (
                 <section
