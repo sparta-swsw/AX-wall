@@ -14,7 +14,7 @@ interface Props {
 
 export default function Sidebar({ members, selected, onSelect, linkCounts }: Props) {
   return (
-    <aside className="w-44 shrink-0 sticky top-[57px] self-start h-[calc(100vh-57px)] overflow-y-auto py-6 px-3 border-r border-gray-200 bg-white/60 backdrop-blur">
+    <aside className="fixed top-[57px] left-0 w-44 h-[calc(100vh-57px)] overflow-y-auto py-6 px-3 border-r border-gray-200 bg-white/60 backdrop-blur z-30">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">구성원</p>
       <ul className="space-y-1">
         {members.map((m) => {

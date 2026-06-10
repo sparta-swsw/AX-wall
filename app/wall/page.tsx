@@ -159,7 +159,7 @@ export default function WallPage() {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex pl-44">
         <Sidebar
           members={members}
           selected={selectedAuthor}
