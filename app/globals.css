@@ -3,6 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background-color: #f0f2f5;
@@ -26,7 +30,7 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.62);
   z-index: -1;
 }
 

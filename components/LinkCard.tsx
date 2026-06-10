@@ -75,7 +75,7 @@ export default function LinkCard({ link, currentUser, color, members, onDelete, 
       <div
         onClick={() => setShowDetail(true)}
         className={`rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-[245px] ${isHolding ? 'bg-gray-100' : 'bg-white'}`}
-        style={{ borderTop: `4px solid ${color.border}` }}
+        style={{ borderTop: `6px solid ${color.border}` }}
       >
         <div className="relative w-full h-32 bg-gray-100 shrink-0">
           <Image src={link.image || '/placeholder.png'} alt={link.title ?? ''} fill

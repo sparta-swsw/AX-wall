@@ -291,6 +291,26 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
                   </a>
                 )}
                 <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                  {link.likers && link.likers.length > 0 && (
+                    <div className="flex -space-x-1.5 mr-1">
+                      {link.likers.slice(0, 5).map((authorId) => {
+                        const m = members.find((mb) => mb.id === authorId) ?? { name: '?' };
+                        return (
+                          <div key={authorId} className="relative group/liker">
+                            <Avatar user={m} size={22} />
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover/liker:opacity-100 transition-opacity pointer-events-none z-50">
+                              {m.name}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {link.likers.length > 5 && (
+                        <div className="w-[22px] h-[22px] rounded-full bg-gray-200 flex items-center justify-center text-[9px] text-gray-500 font-bold border-2 border-white">
+                          +{link.likers.length - 5}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <FloatingTooltip visible={selfLikeMsg} anchorRef={likeButtonRef} text="내 AX는 신청할 수 없어요" />
                   <button ref={likeButtonRef} onClick={handleLike} disabled={likeLoading} className={`flex items-center gap-1.5 text-sm transition-colors ${link.liked_by_me ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'}`}>
                     <span className="relative inline-block" style={{ fontSize: '1.1rem' }}>

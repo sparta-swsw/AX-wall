@@ -7,6 +7,6 @@ export async function PUT(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { color } = await request.json();
-  await supabaseAdmin.from('members').update({ color: color ?? null }).eq('id', user.id);
+  await supabaseAdmin.from('members').update({ color: color || null }).eq('id', user.id);
   return NextResponse.json({ success: true });
 }

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 interface Notification {
   id: string;
   sender_name: string;
-  type: 'comment' | 'like' | 'tag';
+  type: 'comment' | 'like' | 'tag' | 'deploy_consider';
   link_id: string | null;
   link_title: string | null;
   message: string | null;
@@ -15,8 +15,9 @@ interface Notification {
 
 const TYPE_LABEL: Record<string, string> = {
   comment: '댓글을 달았습니다',
-  like: '좋아요를 눌렀습니다',
+  like: '사용 신청을 했습니다',
   tag: '방명록에서 태그했습니다',
+  deploy_consider: '배포 고려 대상에 선정됐습니다!',
 };
 
 interface Props {
@@ -120,15 +121,26 @@ export default function NotificationBell({ onOpenLink, onOpenGuestbook }: Props)
                   className={`group px-4 py-3 border-b border-gray-50 last:border-0 flex items-start gap-2 cursor-pointer hover:bg-gray-50 transition-colors ${!n.is_read ? 'bg-indigo-50/50' : ''}`}
                 >
                   <span className="text-sm shrink-0 mt-0.5">
-                    {n.type === 'like' ? '♥' : n.type === 'tag' ? '@' : '💬'}
+                    {n.type === 'like' ? '♥' : n.type === 'tag' ? '@' : n.type === 'deploy_consider' ? '🚀' : '💬'}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-800">
-                      <span className="font-semibold">{n.sender_name}</span>
-                      {' '}님이 {n.link_title ? <><span className="text-indigo-600 truncate">{n.link_title}</span>에 </> : ''}{TYPE_LABEL[n.type]}
-                    </p>
+                    {n.type === 'deploy_consider' ? (
+                      <p className="text-sm text-gray-800">
+                        {n.link_title && <span className="font-semibold text-indigo-600">{n.link_title}</span>}
+                        {n.link_title ? '을' : ''} 같이 쓰고 싶어하는 파트원이 <span className="font-bold text-rose-500">2명</span>이에요!
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-800">
+                        <span className="font-semibold">{n.sender_name}</span>
+                        {' '}님이 {n.link_title ? <><span className="text-indigo-600">{n.link_title}</span>에 </> : ''}{TYPE_LABEL[n.type]}
+                      </p>
+                    )}
                     {n.message && n.type !== 'like' && (
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{n.message}</p>
+                      <div className="text-xs text-gray-500 mt-0.5 space-y-0.5">
+                        {n.message.split(/(?<=[.!?])\s+/).map((s, i) => (
+                          <p key={i}>{s}</p>
+                        ))}
+                      </div>
                     )}
                     <p className="text-xs text-gray-400 mt-0.5">
                       {new Date(n.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

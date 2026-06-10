@@ -18,6 +18,7 @@ export async function GET() {
     ...link,
     likes_count: link.likes?.length ?? 0,
     liked_by_me: link.likes?.some((l: { author_id: string }) => l.author_id === user.id) ?? false,
+    likers: (link.likes ?? []).map((l: { author_id: string }) => l.author_id),
     comments: (link.comments ?? []).sort(
       (a: { created_at: string }, b: { created_at: string }) =>
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -62,5 +63,5 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ ...link, comments: [], likes_count: 0, liked_by_me: false });
+  return NextResponse.json({ ...link, comments: [], likes_count: 0, liked_by_me: false, likers: [] });
 }

@@ -167,36 +167,36 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
                   {!isMine(entry) && (
                     <span className="text-xs text-gray-400 font-medium px-1">{entry.author_name}</span>
                   )}
-                  <div className="flex items-center gap-1">
-                    {isMine(entry) && (
-                      <div className="relative">
-                        <button
-                          onClick={() => setMenuId(menuId === entry.id ? null : entry.id)}
-                          className="text-gray-300 hover:text-gray-500 text-xs px-1 leading-none"
-                        >
-                          ···
-                        </button>
-                        {menuId === entry.id && (
-                          <div className="absolute bottom-full right-0 mb-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-10">
-                            <button
-                              onClick={() => { handleDelete(entry.id); setMenuId(null); }}
-                              className="px-4 py-2 text-sm text-red-500 hover:bg-gray-50 whitespace-nowrap"
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className={`flex items-end gap-1 ${isMine(entry) ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                        isMine(entry)
-                          ? 'bg-indigo-500 text-white rounded-tr-sm'
-                          : 'bg-gray-100 text-gray-800 rounded-tl-sm'
-                      }`}>
-                        {renderMessage(entry.message)}
-                      </div>
-                      <span className="text-[10px] text-gray-400 shrink-0 pb-0.5">{getTimeStr(entry.created_at)}</span>
+                  <div className={`flex items-end gap-1 group/bubble ${isMine(entry) ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                      isMine(entry)
+                        ? 'bg-indigo-500 text-white rounded-tr-sm'
+                        : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                    }`}>
+                      {renderMessage(entry.message)}
+                    </div>
+                    <div className={`flex items-center gap-0.5 pb-0.5 ${isMine(entry) ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <span className="text-[10px] text-gray-400 shrink-0">{getTimeStr(entry.created_at)}</span>
+                      {isMine(entry) && (
+                        <div className="relative opacity-0 group-hover/bubble:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => setMenuId(menuId === entry.id ? null : entry.id)}
+                            className="text-gray-400 hover:text-gray-600 text-xs px-0.5 leading-none"
+                          >
+                            ···
+                          </button>
+                          {menuId === entry.id && (
+                            <div className="absolute bottom-full right-0 mb-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden z-10">
+                              <button
+                                onClick={() => { handleDelete(entry.id); setMenuId(null); }}
+                                className="px-4 py-2 text-sm text-red-500 hover:bg-gray-50 whitespace-nowrap"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

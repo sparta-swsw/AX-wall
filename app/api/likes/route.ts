@@ -42,6 +42,23 @@ export async function POST(request: Request) {
       });
     }
 
+    const { count } = await supabaseAdmin
+      .from('likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('link_id', link_id);
+
+    if (count === 2 && link && link.author_id && link.author_id !== user.id) {
+      await supabaseAdmin.from('notifications').insert({
+        recipient_id: link.author_id,
+        recipient_name: link.author_name,
+        sender_name: user.name,
+        type: 'deploy_consider',
+        link_id,
+        link_title: link.title,
+        message: '사용 신청이 2개 모였습니다! 배포를 고려해보세요.',
+      });
+    }
+
     return NextResponse.json({ liked: true });
   }
 }

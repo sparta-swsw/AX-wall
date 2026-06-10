@@ -128,7 +128,7 @@ export default function ProfileDropdown({ currentUser, currentColor, onLogout, o
   );
 }
 
-export function Avatar({ user, size = 32 }: { user: { name: string; avatar_url?: string | null }; size?: number }) {
+export function Avatar({ user, size = 32 }: { user: { name: string; avatar_url?: string | null; color?: string | null }; size?: number }) {
   const crown = user.name === '효승';
   const crownSize = Math.round(size * 0.45);
 
@@ -137,7 +137,8 @@ export function Avatar({ user, size = 32 }: { user: { name: string; avatar_url?:
       <Image src={user.avatar_url} alt={user.name} width={size} height={size} className="object-cover" unoptimized />
     </div>
   ) : (
-    <div className="rounded-full bg-indigo-500 flex items-center justify-center shrink-0 text-white font-bold" style={{ width: size, height: size, fontSize: size * 0.4 }}>
+    <div className="rounded-full flex items-center justify-center shrink-0 text-white font-bold"
+      style={{ width: size, height: size, fontSize: size * 0.4, background: user.color || '#6366F1' }}>
       {user.name.charAt(0)}
     </div>
   );

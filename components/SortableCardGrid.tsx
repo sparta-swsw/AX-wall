@@ -119,7 +119,7 @@ export default function SortableCardGrid({ links, currentUser, isOwner, color, m
 
   if (!isOwner) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
         {links.map((link) => (
           <div key={link.id}>
             <LinkCard link={link} currentUser={currentUser} color={color} members={members} onDelete={onDelete} onUpdate={onUpdate} />
@@ -132,7 +132,7 @@ export default function SortableCardGrid({ links, currentUser, isOwner, color, m
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={links.map((l) => l.id)} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
           {links.map((link) => (
             <SortableItem
               key={link.id}

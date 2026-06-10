@@ -16,11 +16,10 @@ export const COLOR_PICKER = [
 
 export { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';
 
+const DEFAULT_COLOR = '#6366F1';
+
 export function getAuthorColor(name: string, members: { name: string; color?: string | null }[]) {
   const member = members.find((m) => m.name === name);
-  if (member?.color) {
-    return { bg: member.color + '18', border: member.color, avatar: member.color, text: member.color };
-  }
-  const index = members.findIndex((m) => m.name === name);
-  return AUTHOR_PALETTE[(index === -1 ? 0 : index) % AUTHOR_PALETTE.length];
+  const c = member?.color || DEFAULT_COLOR;
+  return { bg: c + '18', border: c, avatar: c, text: c };
 }

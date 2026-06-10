@@ -13,6 +13,7 @@ import StickerLayer from '@/components/StickerLayer';
 import LinkDetailModal from '@/components/LinkDetailModal';
 import { createPortal } from 'react-dom';
 import { getAuthorColor } from '@/lib/colors';
+import { supabase } from '@/lib/supabase';
 import Sidebar from '@/components/Sidebar';
 import SortableCardGrid from '@/components/SortableCardGrid';
 
@@ -72,6 +73,41 @@ export default function WallPage() {
     fetchMembers();
   }, [fetchLinks, fetchMembers, router]);
 
+  useEffect(() => { // eslint-disable-next-line react-hooks/exhaustive-deps
+    const channel = supabase.channel('wall-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'links' }, () => {
+        fetchLinks();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'links' }, (p) => {
+        setLinks((prev) => prev.map((l) => l.id === p.new.id ? { ...l, ...p.new } : l));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'links' }, (p) => {
+        setLinks((prev) => prev.filter((l) => l.id !== p.old.id));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, (p) => {
+        const newComment = { id: p.new.id, link_id: p.new.link_id, parent_id: p.new.parent_id ?? null, author_id: p.new.author_id, author_name: p.new.author_name, content: p.new.content, created_at: p.new.created_at };
+        setLinks((prev) => prev.map((l) => l.id === p.new.link_id
+          ? { ...l, comments: [...l.comments, newComment] }
+          : l));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'comments' }, (p) => {
+        setLinks((prev) => prev.map((l) => ({ ...l, comments: l.comments.filter((c) => c.id !== p.old.id) })));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, (p) => {
+        setLinks((prev) => prev.map((l) => l.id === p.new.link_id
+          ? { ...l, likes_count: l.likes_count + 1, likers: [...(l.likers ?? []), p.new.author_id] }
+          : l));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, (p) => {
+        setLinks((prev) => prev.map((l) => l.id === p.old.link_id
+          ? { ...l, likes_count: Math.max(0, l.likes_count - 1), likers: (l.likers ?? []).filter((id) => id !== p.old.author_id) }
+          : l));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchLinks]);
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/login');
@@ -90,6 +126,14 @@ export default function WallPage() {
     if (data.skipped.length === 0) setTimeout(() => { setShowAddMemberModal(false); setMemberNames(''); setMemberResult(null); }, 1500);
   };
 
+  useEffect(() => {
+    if (!loading && members.length > 0) {
+      const linked = new Set(links.map(l => l.author_name).filter(Boolean) as string[]);
+      setCollapsed(new Set(members.filter(m => !linked.has(m.name)).map(m => m.name)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
   const toggleCollapse = (name: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -99,7 +143,9 @@ export default function WallPage() {
   };
 
   const handleColorChange = async (color: string) => {
-    setMembers((prev) => prev.map((m) => m.name === currentUser?.name ? { ...m, color } : m));
+    const c = color || null;
+    setMembers((prev) => prev.map((m) => m.name === currentUser?.name ? { ...m, color: c } : m));
+    setCurrentUser((u) => u ? { ...u, color: c } : u);
     await fetch('/api/auth/color', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -136,7 +182,13 @@ export default function WallPage() {
     );
   }
 
-  const groups = groupByAuthor(links);
+  const linkedGroups = groupByAuthor(links);
+  const groups = [
+    ...linkedGroups,
+    ...members
+      .filter((m) => !linkedGroups.find((g) => g.name === m.name))
+      .map((m) => ({ name: m.name, links: [] as import('@/types').Link[], latestAt: '' })),
+  ];
 
   return (
     <div className="min-h-screen relative">
@@ -163,7 +215,7 @@ export default function WallPage() {
             />
             <ProfileDropdown
               currentUser={currentUser}
-              currentColor={getAuthorColor(currentUser.name, members).border}
+              currentColor={currentUser.color || getAuthorColor(currentUser.name, members).border}
               onLogout={handleLogout}
               onAvatarChange={(url) => setCurrentUser((u) => u ? { ...u, avatar_url: url } : u)}
               onColorChange={handleColorChange}
@@ -219,7 +271,7 @@ export default function WallPage() {
               const filtered = applyFilters(tab === '배포 고려' ? links.filter(l => l.likes_count >= 2) : links.filter(l => l.liked_by_me));
               if (filtered.length === 0) return <p className="text-center py-10 text-gray-400 text-sm">{tab === '배포 고려' ? '사용 신청 2개 이상인 항목이 없습니다.' : '신청한 항목이 없습니다.'}</p>;
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                   {filtered.map((link) => {
                     const color = getAuthorColor(link.author_name ?? '', members);
                     return (
@@ -238,7 +290,7 @@ export default function WallPage() {
             {filteredLinks.length === 0 ? (
               <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                 {filteredLinks.map((link) => {
                   const color = getAuthorColor(link.author_name ?? '', members);
                   return (
@@ -259,12 +311,12 @@ export default function WallPage() {
             <p className="text-sm mt-1">첫 번째 링크를 추가해보세요.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
             {[...groups]
               .sort((a, b) => a.name === currentUser.name ? -1 : b.name === currentUser.name ? 1 : 0)
               .filter((g) => !selectedAuthor || g.name === selectedAuthor)
               .map((g) => ({ ...g, links: applyFilters(g.links) }))
-              .filter((g) => g.links.length > 0)
+              .filter((g) => !hasFilter || g.links.length > 0)
               .map((group) => {
               const color = getAuthorColor(group.name, members);
               const member = members.find((m) => m.name === group.name);
@@ -284,7 +336,10 @@ export default function WallPage() {
                     </button>
                     <div className="flex-1 h-px bg-gray-200" />
                   </div>
-                  {!isCollapsed && <SortableCardGrid
+                  {!isCollapsed && group.links.length === 0 && (
+                    <p className="text-sm text-gray-300 py-4 text-center">아직 등록한 AX가 없습니다</p>
+                  )}
+                  {!isCollapsed && group.links.length > 0 && <SortableCardGrid
                     links={group.links}
                     currentUser={currentUser}
                     isOwner={group.name === currentUser.name}
@@ -300,6 +355,7 @@ export default function WallPage() {
                     }
                   />}
                 </section>
+
               );
             })}
           </div>
