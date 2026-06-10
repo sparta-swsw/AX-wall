@@ -36,7 +36,7 @@ export default function AddLinkModal({ onAdd, onClose }: Props) {
   const [targets, setTargets] = useState<LinkTarget[]>([]);
   const [status, setStatus] = useState<LinkStatus>('기획 중');
   const [url, setUrl] = useState('');
-  const [platform, setPlatform] = useState('');
+  const [platform] = useState('');
   const [preview, setPreview] = useState<OgData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [loading, setLoading] = useState(false);
