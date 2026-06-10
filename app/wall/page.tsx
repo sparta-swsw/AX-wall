@@ -117,7 +117,7 @@ export default function WallPage() {
   const groups = groupByAuthor(links);
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen relative">
       <GlobalNoticeBanner links={links} />
 
       <header className="bg-white/90 backdrop-blur border-b border-gray-100 sticky top-0 z-40 shadow-sm">
@@ -166,9 +166,9 @@ export default function WallPage() {
           onSelect={setSelectedAuthor}
           linkCounts={Object.fromEntries(groupByAuthor(links).map((g) => [g.name, g.links.length]))}
         />
-      <main className="flex-1 px-6 py-8 min-w-0">
+      <main className="flex-1 min-w-0 px-4 py-6">
         {filteredLinks ? (
-          <div>
+          <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
             <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {filteredLinks.length}개</p>
             {filteredLinks.length === 0 ? (
               <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
@@ -194,7 +194,7 @@ export default function WallPage() {
             <p className="text-sm mt-1">첫 번째 링크를 추가해보세요.</p>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-3">
             {[...groups]
               .sort((a, b) => a.name === currentUser.name ? -1 : b.name === currentUser.name ? 1 : 0)
               .filter((g) => !selectedAuthor || g.name === selectedAuthor)
@@ -204,8 +204,12 @@ export default function WallPage() {
               const isMe = group.name === currentUser.name;
               const isCollapsed = collapsed.has(group.name);
               return (
-                <section key={group.name}>
-                  <div className="flex items-center gap-3 mb-5 relative">
+                <section
+                  key={group.name}
+                  className={`rounded-2xl px-5 pt-4 ${isCollapsed ? 'pb-4' : 'pb-5'}`}
+                  style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+                >
+                  <div className={`flex items-center gap-3 relative ${isCollapsed ? 'mb-0' : 'mb-5'}`}>
                     <button onClick={() => toggleCollapse(group.name)} className="flex items-center gap-3 min-w-0 text-left">
                       <Avatar user={member ?? { name: group.name }} size={36} />
                       <span className="font-bold text-gray-900">{group.name}</span>

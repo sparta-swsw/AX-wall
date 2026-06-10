@@ -129,16 +129,30 @@ export default function ProfileDropdown({ currentUser, currentColor, onLogout, o
 }
 
 export function Avatar({ user, size = 32 }: { user: { name: string; avatar_url?: string | null }; size?: number }) {
-  if (user.avatar_url) {
-    return (
-      <div className="rounded-full overflow-hidden shrink-0" style={{ width: size, height: size }}>
-        <Image src={user.avatar_url} alt={user.name} width={size} height={size} className="object-cover" unoptimized />
-      </div>
-    );
-  }
-  return (
+  const crown = user.name === '효승';
+  const crownSize = Math.round(size * 0.45);
+
+  const inner = user.avatar_url ? (
+    <div className="rounded-full overflow-hidden shrink-0" style={{ width: size, height: size }}>
+      <Image src={user.avatar_url} alt={user.name} width={size} height={size} className="object-cover" unoptimized />
+    </div>
+  ) : (
     <div className="rounded-full bg-indigo-500 flex items-center justify-center shrink-0 text-white font-bold" style={{ width: size, height: size, fontSize: size * 0.4 }}>
       {user.name.charAt(0)}
+    </div>
+  );
+
+  if (!crown) return inner;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      {inner}
+      <span
+        className="absolute pointer-events-none"
+        style={{ fontSize: crownSize, top: -crownSize * 0.5, left: -crownSize * 0.3, lineHeight: 1, transform: 'rotate(-32deg)' }}
+      >
+        👑
+      </span>
     </div>
   );
 }
