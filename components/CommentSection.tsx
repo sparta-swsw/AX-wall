@@ -31,6 +31,11 @@ function CommentItem({ comment, replies, currentUser, members, linkId, onAdd, on
   const [loading, setLoading] = useState(false);
   const getMember = (name: string | null) => members.find((m) => m.name === name) ?? { name: name ?? '' };
 
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/comments/${id}`, { method: 'DELETE' });
+    onDelete(id);
+  };
+
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || loading) return;
@@ -61,7 +66,7 @@ function CommentItem({ comment, replies, currentUser, members, linkId, onAdd, on
               답글
             </button>
             {comment.author_id === currentUser.id && (
-              <button onClick={() => onDelete(comment.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">
+              <button onClick={() => handleDelete(comment.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors">
                 삭제
               </button>
             )}
@@ -79,7 +84,7 @@ function CommentItem({ comment, replies, currentUser, members, linkId, onAdd, on
                 <span className="text-gray-600 text-xs">{r.content}</span>
               </div>
               {r.author_id === currentUser.id && (
-                <button onClick={() => onDelete(r.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors shrink-0">
+                <button onClick={() => handleDelete(r.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors shrink-0">
                   삭제
                 </button>
               )}

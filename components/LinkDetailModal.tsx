@@ -2,7 +2,19 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Link, Comment, AuthUser } from '@/types';
+import { Link, Comment, AuthUser, LinkCategory, LinkTarget, LinkStatus } from '@/types';
+import { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';
+
+const CATEGORIES: LinkCategory[] = ['스킬', '배포', '자동화'];
+const TARGETS: LinkTarget[] = ['수강생', '전사', '팀', '파트', '트랙', '개인'];
+const STATUSES: { value: LinkStatus; color: string }[] = [
+  { value: '기획 중', color: '#9CA3AF' },
+  { value: '개발 중', color: '#3B82F6' },
+  { value: '홀딩 중', color: '#F59E0B' },
+  { value: '사용 중', color: '#10B981' },
+  { value: '사용 종료', color: '#EF4444' },
+  { value: '폐기', color: '#6B7280' },
+];
 import CommentSection from './CommentSection';
 import { Avatar } from './ProfileDropdown';
 
@@ -23,7 +35,18 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
   const [mode, setMode] = useState<'view' | 'edit' | 'notice'>('view');
   const [noticeText, setNoticeText] = useState(link.notice ?? '');
   const [likeLoading, setLikeLoading] = useState(false);
-  const [editForm, setEditForm] = useState({ title: link.title ?? '', url: link.url, memo: link.memo ?? '', usage_url: link.usage_url ?? '' });
+  const [likeAnim, setLikeAnim] = useState(false);
+  const [selfLikeMsg, setSelfLikeMsg] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: link.title ?? '',
+    url: link.url ?? '',
+    memo: link.memo ?? '',
+    usage_url: link.usage_url ?? '',
+    category: link.category ?? null as LinkCategory | null,
+    status: link.status ?? '기획 중' as LinkStatus,
+    target: link.target ?? [] as LinkTarget[],
+    platform: link.platform ?? '',
+  });
   const [editLoading, setEditLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isOwner = link.author_id === currentUser.id;
@@ -37,8 +60,14 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
   }, []);
 
   const handleLike = async () => {
+    if (link.author_id === currentUser.id) {
+      setSelfLikeMsg(true);
+      setTimeout(() => setSelfLikeMsg(false), 2000);
+      return;
+    }
     if (likeLoading) return;
     setLikeLoading(true);
+    if (!link.liked_by_me) { setLikeAnim(true); setTimeout(() => setLikeAnim(false), 600); }
     try {
       const res = await fetch('/api/likes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ link_id: link.id }) });
       const data = await res.json();
@@ -57,7 +86,7 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
     if (!editForm.title.trim() || !editForm.url.trim() || editLoading) return;
     setEditLoading(true);
     try {
-      const res = await fetch(`/api/links/${link.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: editForm.title.trim(), url: editForm.url.trim(), memo: editForm.memo.trim() || null, usage_url: editForm.usage_url.trim() || null }) });
+      const res = await fetch(`/api/links/${link.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: editForm.title.trim(), url: editForm.url.trim() || null, memo: editForm.memo.trim() || null, usage_url: editForm.usage_url.trim() || null, category: editForm.category, status: editForm.status, target: editForm.target.length > 0 ? editForm.target : null, platform: editForm.platform.trim() || null }) });
       if (res.ok) { const data = await res.json(); onUpdate({ ...link, ...data }); setMode('view'); }
     } finally { setEditLoading(false); }
   };
@@ -119,19 +148,78 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
           <div className="p-6 space-y-4">
             {mode === 'edit' && (
               <div className="space-y-3">
-                {([['제목', 'title'], ['링크', 'url'], ['사용법 링크 (선택)', 'usage_url']] as const).map(([label, field]) => (
-                  <div key={field}>
-                    <label className="block text-xs text-gray-500 mb-1">{label}</label>
-                    <input value={editForm[field]} onChange={(e) => setEditForm((f) => ({ ...f, [field]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
+                {/* 카테고리 */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">카테고리</label>
+                  <div className="flex gap-2">
+                    {CATEGORIES.map((c) => (
+                      <button key={c} type="button" onClick={() => setEditForm((f) => ({ ...f, category: c }))}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-colors ${editForm.category === c ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                        {c}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                </div>
+                {/* 제목 */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">제목</label>
+                  <input value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
+                </div>
+                {/* 배포 링크 + 플랫폼 */}
+                {editForm.category === '배포' && (
+                  <>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">링크</label>
+                      <input value={editForm.url} onChange={(e) => setEditForm((f) => ({ ...f, url: e.target.value }))}
+                        placeholder="https://..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">배포 플랫폼</label>
+                      <input value={editForm.platform} onChange={(e) => setEditForm((f) => ({ ...f, platform: e.target.value }))}
+                        placeholder="Vercel, AWS, n8n..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
+                    </div>
+                  </>
+                )}
+                {/* 설명 */}
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">설명</label>
-                  <textarea value={editForm.memo} onChange={(e) => setEditForm((f) => ({ ...f, memo: e.target.value }))} rows={3}
+                  <textarea value={editForm.memo} onChange={(e) => setEditForm((f) => ({ ...f, memo: e.target.value }))} rows={2}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400 resize-none" />
                 </div>
-                <div className="flex gap-2">
+                {/* 대상 */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">대상</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TARGETS.map((t) => (
+                      <button key={t} type="button"
+                        onClick={() => setEditForm((f) => ({ ...f, target: f.target.includes(t) ? f.target.filter(x => x !== t) : [...f.target, t] }))}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${editForm.target.includes(t) ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* 사용법 링크 */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">사용법 링크</label>
+                  <input value={editForm.usage_url} onChange={(e) => setEditForm((f) => ({ ...f, usage_url: e.target.value }))}
+                    placeholder="https://..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
+                </div>
+                {/* 상태 */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">상태</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {STATUSES.map((s) => (
+                      <button key={s.value} type="button" onClick={() => setEditForm((f) => ({ ...f, status: s.value }))}
+                        className="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors"
+                        style={editForm.status === s.value ? { background: s.color, color: '#fff', borderColor: s.color } : { background: '#fff', color: '#6B7280', borderColor: '#E5E7EB' }}>
+                        {s.value}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
                   <button onClick={() => setMode('view')} className="flex-1 py-2 border border-gray-200 text-gray-500 text-sm rounded-xl">취소</button>
                   <button onClick={handleEditSave} disabled={editLoading} className="flex-1 py-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-medium rounded-xl">{editLoading ? '저장 중...' : '저장'}</button>
                 </div>
@@ -154,8 +242,12 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
             {mode === 'view' && (
               <>
                 <div>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-base font-bold text-gray-900 hover:text-indigo-600 transition-colors leading-snug">{link.title || link.url}</a>
-                  <p className="text-gray-400 text-xs mt-1 truncate">{link.url}</p>
+                  {link.url ? (
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-base font-bold text-gray-900 hover:text-indigo-600 transition-colors leading-snug">{link.title || link.url}</a>
+                  ) : (
+                    <p className="text-base font-bold text-gray-900 leading-snug">{link.title}</p>
+                  )}
+                  {link.url && <p className="text-gray-400 text-xs mt-1 truncate">{link.url}</p>}
                 </div>
                 {link.memo && <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-indigo-300 pl-3">{link.memo}</p>}
                 {link.usage_url && (
@@ -165,7 +257,24 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
                 )}
                 <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
                   <button onClick={handleLike} disabled={likeLoading} className={`flex items-center gap-1.5 text-sm transition-colors ${link.liked_by_me ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'}`}>
-                    <span>{link.liked_by_me ? '♥' : '♡'}</span><span>{link.likes_count}</span>
+                    <span className="relative inline-block" style={{ fontSize: '1.1rem' }}>
+                      {link.liked_by_me ? '♥' : '♡'}
+                      {selfLikeMsg && (
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap bg-gray-800 text-white text-xs px-2 py-1 rounded-lg pointer-events-none z-50">
+                          내 AX는 신청할 수 없어요
+                        </span>
+                      )}
+                      {likeAnim && (
+                        <>
+                          <span className="heart-pop absolute text-rose-400 pointer-events-none" style={{ left: '50%', top: '50%', fontSize: '2rem' }}>♥</span>
+                          {[0,1,2,3,4,5].map(i => (
+                            <span key={i} className={`heart-fly heart-fly-${i} absolute text-rose-300 pointer-events-none`}
+                              style={{ left: '50%', top: '50%', fontSize: '0.8rem', transform: 'translate(-50%,-50%)' }}>♥</span>
+                          ))}
+                        </>
+                      )}
+                    </span>
+                    <span>{link.likes_count}</span>
                   </button>
                   <span className="text-gray-400 text-sm">댓글 {link.comments.length}</span>
                 </div>

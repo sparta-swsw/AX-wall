@@ -9,6 +9,9 @@ export async function POST(request: Request) {
   const { link_id } = await request.json();
   if (!link_id) return NextResponse.json({ error: 'link_id가 필요합니다.' }, { status: 400 });
 
+  const { data: link } = await supabaseAdmin.from('links').select('author_id').eq('id', link_id).single();
+  if (link?.author_id === user.id) return NextResponse.json({ error: '본인 카드에는 신청할 수 없습니다.' }, { status: 403 });
+
   const { data: existing } = await supabaseAdmin
     .from('likes')
     .select('id')

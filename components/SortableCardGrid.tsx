@@ -7,7 +7,30 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  MouseSensor,
 } from '@dnd-kit/core';
+
+function isInteractiveElement(el: EventTarget | null): boolean {
+  const tags = ['button', 'input', 'textarea', 'select', 'a'];
+  let node = el as HTMLElement | null;
+  while (node) {
+    if (tags.includes(node.tagName?.toLowerCase())) return true;
+    node = node.parentElement;
+  }
+  return false;
+}
+
+class SmartPointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: 'onPointerDown' as const,
+      handler: ({ nativeEvent: event }: { nativeEvent: PointerEvent }) => {
+        if (!event.isPrimary || event.button !== 0 || isInteractiveElement(event.target)) return false;
+        return true;
+      },
+    },
+  ];
+}
 import {
   SortableContext,
   useSortable,
@@ -70,7 +93,7 @@ interface Props {
 
 export default function SortableCardGrid({ links, currentUser, isOwner, color, members, onDelete, onUpdate, onReorder }: Props) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(SmartPointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   const handleDragEnd = async (event: DragEndEvent) => {

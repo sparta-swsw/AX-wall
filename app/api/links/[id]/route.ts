@@ -16,7 +16,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   if (!link) return NextResponse.json({ error: '없는 링크입니다.' }, { status: 404 });
   if (link.author_id !== user.id) return NextResponse.json({ error: '권한 없음' }, { status: 403 });
 
-  const { title, url, memo, usage_url } = await request.json();
+  const { title, url, memo, usage_url, category, status, target, platform } = await request.json();
 
   let image = undefined;
   let description = undefined;
@@ -30,9 +30,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     .from('links')
     .update({
       title,
-      url,
+      url: url ?? null,
       memo: memo ?? null,
       usage_url: usage_url ?? null,
+      category: category ?? null,
+      status: status ?? null,
+      target: target ?? null,
+      platform: platform ?? null,
       ...(image !== undefined && { image }),
       ...(description !== undefined && { description }),
     })

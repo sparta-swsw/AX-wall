@@ -31,21 +31,30 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, url, memo, usage_url } = await request.json();
+  const { title, url, memo, usage_url, category, status, target, platform } = await request.json();
   if (!title?.trim()) return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 });
-  if (!url?.trim()) return NextResponse.json({ error: 'URL을 입력해주세요.' }, { status: 400 });
 
-  const ogData = await fetchOgData(url.trim());
+  let ogDescription = null;
+  let ogImage = null;
+  if (url?.trim()) {
+    const og = await fetchOgData(url.trim());
+    ogDescription = og.description;
+    ogImage = og.image;
+  }
 
   const { data: link, error } = await supabaseAdmin
     .from('links')
     .insert({
-      url: url.trim(),
+      url: url?.trim() || null,
       title: title.trim(),
-      description: ogData.description,
-      image: ogData.image,
+      description: ogDescription,
+      image: ogImage,
       memo: memo ?? null,
       usage_url: usage_url ?? null,
+      category: category ?? null,
+      status: status ?? null,
+      target: target ?? null,
+      platform: platform ?? null,
       author_id: user.id,
       author_name: user.name,
     })

@@ -11,6 +11,7 @@ import NotificationBell from '@/components/NotificationBell';
 import Guestbook from '@/components/Guestbook';
 import StickerLayer from '@/components/StickerLayer';
 import LinkDetailModal from '@/components/LinkDetailModal';
+import { createPortal } from 'react-dom';
 import { getAuthorColor } from '@/lib/colors';
 import Sidebar from '@/components/Sidebar';
 import SortableCardGrid from '@/components/SortableCardGrid';
@@ -38,6 +39,10 @@ export default function WallPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
+  const [tab, setTab] = useState<'전체' | '배포 고려' | '내 신청'>('전체');
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
+  const [filterTargets, setFilterTargets] = useState<string[]>([]);
   const [focusedLink, setFocusedLink] = useState<import('@/types').Link | null>(null);
   const [guestbookOpen, setGuestbookOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -101,9 +106,25 @@ export default function WallPage() {
     });
   };
 
+  const handleToggleFilter = (type: 'category' | 'status' | 'target', val: string) => {
+    if (type === 'category') setFilterCategories(p => p.includes(val) ? p.filter(x => x !== val) : [...p, val]);
+    if (type === 'status') setFilterStatuses(p => p.includes(val) ? p.filter(x => x !== val) : [...p, val]);
+    if (type === 'target') setFilterTargets(p => p.includes(val) ? p.filter(x => x !== val) : [...p, val]);
+  };
+
+  const applyFilters = (linkList: import('@/types').Link[]) => {
+    return linkList.filter(l => {
+      if (filterCategories.length > 0 && !filterCategories.includes(l.category ?? '')) return false;
+      if (filterStatuses.length > 0 && !filterStatuses.includes(l.status ?? '')) return false;
+      if (filterTargets.length > 0 && !l.target?.some(t => filterTargets.includes(t))) return false;
+      return true;
+    });
+  };
+
   const q = search.trim().toLowerCase();
-  const filteredLinks = q
-    ? links.filter((l) => l.author_name?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q))
+  const hasFilter = filterCategories.length > 0 || filterStatuses.length > 0 || filterTargets.length > 0;
+  const filteredLinks = (q || hasFilter)
+    ? applyFilters(links.filter((l) => !q || l.author_name?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)))
     : null;
 
   if (loading || !currentUser) {
@@ -153,23 +174,61 @@ export default function WallPage() {
               onClick={() => setShowModal(true)}
               className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
             >
-              + 링크 추가
+              AX 기록하기
             </button>
           </div>
         </div>
       </header>
 
-      <div className="flex pl-44">
+      <div className="flex pl-52">
         <Sidebar
           members={members}
           selected={selectedAuthor}
           onSelect={setSelectedAuthor}
           linkCounts={Object.fromEntries(groupByAuthor(links).map((g) => [g.name, g.links.length]))}
+          filterCategories={filterCategories}
+          filterStatuses={filterStatuses}
+          filterTargets={filterTargets}
+          onToggle={handleToggleFilter}
+          onClearFilters={() => { setFilterCategories([]); setFilterStatuses([]); setFilterTargets([]); }}
         />
       <main className="flex-1 min-w-0 px-4 py-6">
-        {filteredLinks ? (
+        <div className="flex gap-2 mb-5">
+          {(['전체', '배포 고려', '내 신청'] as const).map((t) => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium transition-colors flex items-center gap-1 ${
+                tab === t ? 'bg-indigo-500 text-white' : 'bg-white/70 text-gray-500 hover:bg-white'
+              }`}>
+              {t === '배포 고려' && <span className="text-xs">♥</span>}
+              {t}
+              {t === '배포 고려' && <span className="text-xs opacity-70">{links.filter(l => l.likes_count >= 2).length}</span>}
+              {t === '내 신청' && <span className="text-xs opacity-70">{links.filter(l => l.liked_by_me).length}</span>}
+            </button>
+          ))}
+        </div>
+        {tab !== '전체' ? (
+          <div className="rounded-2xl px-5 pt-4 pb-5 relative z-10"
+            style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+            {(() => {
+              const filtered = applyFilters(tab === '배포 고려' ? links.filter(l => l.likes_count >= 2) : links.filter(l => l.liked_by_me));
+              if (filtered.length === 0) return <p className="text-center py-10 text-gray-400 text-sm">{tab === '배포 고려' ? '사용 신청 2개 이상인 항목이 없습니다.' : '신청한 항목이 없습니다.'}</p>;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filtered.map((link) => {
+                    const color = getAuthorColor(link.author_name ?? '', members);
+                    return (
+                      <LinkCard key={link.id} link={link} currentUser={currentUser} color={color} members={members}
+                        onDelete={(id) => setLinks((p) => p.filter((l) => l.id !== id))}
+                        onUpdate={(u) => setLinks((p) => p.map((l) => l.id === u.id ? u : l))} />
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        ) : filteredLinks ? (
           <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-            <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {filteredLinks.length}개</p>
+            {q && <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {filteredLinks.length}개</p>}
             {filteredLinks.length === 0 ? (
               <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
             ) : (
@@ -198,6 +257,8 @@ export default function WallPage() {
             {[...groups]
               .sort((a, b) => a.name === currentUser.name ? -1 : b.name === currentUser.name ? 1 : 0)
               .filter((g) => !selectedAuthor || g.name === selectedAuthor)
+              .map((g) => ({ ...g, links: applyFilters(g.links) }))
+              .filter((g) => g.links.length > 0)
               .map((group) => {
               const color = getAuthorColor(group.name, members);
               const member = members.find((m) => m.name === group.name);
@@ -244,7 +305,7 @@ export default function WallPage() {
       <Guestbook currentUser={currentUser} members={members} open={guestbookOpen} onOpenChange={setGuestbookOpen} />
       <StickerLayer currentUser={currentUser} />
 
-      {focusedLink && (
+      {focusedLink && typeof document !== 'undefined' && createPortal(
         <LinkDetailModal
           link={links.find((l) => l.id === focusedLink.id) ?? focusedLink}
           currentUser={currentUser}
@@ -252,7 +313,8 @@ export default function WallPage() {
           onClose={() => setFocusedLink(null)}
           onDelete={(id) => { setLinks((p) => p.filter((l) => l.id !== id)); setFocusedLink(null); }}
           onUpdate={(u) => { setLinks((p) => p.map((l) => l.id === u.id ? u : l)); setFocusedLink(u); }}
-        />
+        />,
+        document.body
       )}
 
       {showModal && <AddLinkModal onAdd={(l) => setLinks((p) => [l, ...p])} onClose={() => setShowModal(false)} />}

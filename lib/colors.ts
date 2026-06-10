@@ -14,6 +14,8 @@ export const COLOR_PICKER = [
   '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316',
 ];
 
+export { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';
+
 export function getAuthorColor(name: string, members: { name: string; color?: string | null }[]) {
   const member = members.find((m) => m.name === name);
   if (member?.color) {
