@@ -46,6 +46,7 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
         setEntries(data.reverse());
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {

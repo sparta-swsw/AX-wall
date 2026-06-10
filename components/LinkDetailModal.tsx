@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Link, Comment, AuthUser, LinkCategory, LinkTarget, LinkStatus } from '@/types';
-import { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';
 
 const CATEGORIES: LinkCategory[] = ['스킬', '배포', '자동화'];
 const TARGETS: LinkTarget[] = ['수강생', '전사', '팀', '파트', '트랙', '개인'];
@@ -173,11 +172,6 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
                       <label className="block text-xs text-gray-500 mb-1">링크</label>
                       <input value={editForm.url} onChange={(e) => setEditForm((f) => ({ ...f, url: e.target.value }))}
                         placeholder="https://..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">배포 플랫폼</label>
-                      <input value={editForm.platform} onChange={(e) => setEditForm((f) => ({ ...f, platform: e.target.value }))}
-                        placeholder="Vercel, AWS, n8n..." className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
                     </div>
                   </>
                 )}

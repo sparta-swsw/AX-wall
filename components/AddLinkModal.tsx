@@ -158,14 +158,6 @@ export default function AddLinkModal({ onAdd, onClose }: Props) {
             </div>
           )}
 
-          {/* 배포 전용: 플랫폼 */}
-          {category === '배포' && (
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">배포 플랫폼 <span className="text-gray-400">(선택)</span></label>
-              <input value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="예: Vercel, AWS, n8n"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-400" />
-            </div>
-          )}
 
           {/* 공통: 설명 */}
           <div>

@@ -7,7 +7,6 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  MouseSensor,
 } from '@dnd-kit/core';
 
 function isInteractiveElement(el: EventTarget | null): boolean {

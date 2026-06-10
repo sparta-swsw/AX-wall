@@ -64,7 +64,9 @@ export default function LinkCard({ link, currentUser, color, members, onDelete, 
 
         <div className="relative w-full h-36 bg-gray-100 shrink-0">
           <Image src={link.image || '/placeholder.png'} alt={link.title ?? ''} fill
-            className="object-cover" style={{ objectPosition: 'center 65%' }} unoptimized />
+            className="object-cover"
+            style={{ objectPosition: 'center 65%' }}
+            unoptimized />
           <div className="absolute top-2 left-2 flex gap-1">
             {categoryStyle && (
               <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
