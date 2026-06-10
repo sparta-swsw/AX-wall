@@ -21,6 +21,16 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
+function getDateStr(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function getTimeStr(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 function renderMessage(message: string) {
   return message.split(/(@\S+)/g).map((part, i) =>
     part.startsWith('@')
@@ -41,13 +51,10 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open && entries.length === 0) {
-      fetch('/api/guestbook').then((r) => r.ok ? r.json() : []).then((data) => {
-        setEntries(data.reverse());
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    fetch('/api/guestbook').then((r) => r.ok ? r.json() : []).then((data) => {
+      setEntries(data.reverse());
+    });
+  }, []);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -141,8 +148,20 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
                 아직 메시지가 없습니다
               </div>
             )}
-            {entries.map((entry) => (
-              <div key={entry.id} className={`flex gap-2 ${isMine(entry) ? 'flex-row-reverse' : 'flex-row'}`}>
+            {entries.map((entry, i) => {
+              const prevDate = i > 0 ? getDateStr(entries[i - 1].created_at) : null;
+              const thisDate = getDateStr(entry.created_at);
+              const showDate = thisDate !== prevDate;
+              return (
+              <div key={entry.id}>
+                {showDate && (
+                  <div className="flex items-center gap-2 my-2">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-[10px] text-gray-400 shrink-0">{thisDate}</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+                )}
+              <div className={`flex gap-2 ${isMine(entry) ? 'flex-row-reverse' : 'flex-row'}`}>
                 {!isMine(entry) && <Avatar user={getMember(entry.author_name)} size={28} />}
                 <div className={`max-w-[70%] flex flex-col gap-1 ${isMine(entry) ? 'items-end' : 'items-start'}`}>
                   {!isMine(entry) && (
@@ -169,17 +188,21 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
                         )}
                       </div>
                     )}
-                    <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                      isMine(entry)
-                        ? 'bg-indigo-500 text-white rounded-tr-sm'
-                        : 'bg-gray-100 text-gray-800 rounded-tl-sm'
-                    }`}>
-                      {renderMessage(entry.message)}
+                    <div className={`flex items-end gap-1 ${isMine(entry) ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                        isMine(entry)
+                          ? 'bg-indigo-500 text-white rounded-tr-sm'
+                          : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                      }`}>
+                        {renderMessage(entry.message)}
+                      </div>
+                      <span className="text-[10px] text-gray-400 shrink-0 pb-0.5">{getTimeStr(entry.created_at)}</span>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+              </div>
+            );})}
             <div ref={bottomRef} />
           </div>
 

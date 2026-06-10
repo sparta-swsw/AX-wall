@@ -28,6 +28,7 @@ export interface Link {
   comments: Comment[];
   likes_count: number;
   liked_by_me: boolean;
+  likers: string[];
 }
 
 export interface Comment {

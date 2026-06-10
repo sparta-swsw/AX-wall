@@ -44,6 +44,7 @@ export default function WallPage() {
   const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
   const [filterTargets, setFilterTargets] = useState<string[]>([]);
   const [focusedLink, setFocusedLink] = useState<import('@/types').Link | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(57);
   const [guestbookOpen, setGuestbookOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -139,9 +140,12 @@ export default function WallPage() {
 
   return (
     <div className="min-h-screen relative">
-      <GlobalNoticeBanner links={links} />
-
-      <header className="bg-white/90 backdrop-blur border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+      <div className="sticky top-0 z-40" ref={(el) => { if (el) setHeaderHeight(el.offsetHeight); }}>
+        <GlobalNoticeBanner links={links} onOpenLink={(id) => {
+          const link = links.find((l) => l.id === id);
+          if (link) setFocusedLink(link);
+        }} />
+        <header className="bg-white/90 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="px-6 py-3 flex items-center gap-4">
           <h1 className="text-gray-900 font-bold text-lg shrink-0">웹게임파트 AX 담벼락</h1>
           <div className="flex-1 max-w-sm">
@@ -178,10 +182,12 @@ export default function WallPage() {
             </button>
           </div>
         </div>
-      </header>
+        </header>
+      </div>
 
       <div className="flex pl-52">
         <Sidebar
+          headerHeight={headerHeight}
           members={members}
           selected={selectedAuthor}
           onSelect={setSelectedAuthor}

@@ -7,6 +7,7 @@ import { getAuthorColor, CATEGORY_STYLE, STATUS_STYLE } from '@/lib/colors';
 type Member = { id: string; name: string; avatar_url?: string | null; color?: string | null };
 
 interface Props {
+  headerHeight?: number;
   members: Member[];
   selected: string | null;
   onSelect: (name: string | null) => void;
@@ -20,7 +21,7 @@ interface Props {
 
 const TARGETS = ['수강생', '전사', '팀', '파트', '트랙', '개인'];
 
-export default function Sidebar({ members, selected, onSelect, linkCounts, filterCategories, filterStatuses, filterTargets, onToggle, onClearFilters }: Props) {
+export default function Sidebar({ headerHeight = 57, members, selected, onSelect, linkCounts, filterCategories, filterStatuses, filterTargets, onToggle, onClearFilters }: Props) {
   const [membersOpen, setMembersOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -29,7 +30,8 @@ export default function Sidebar({ members, selected, onSelect, linkCounts, filte
   const hasFilter = filterCategories.length + filterStatuses.length + filterTargets.length > 0;
 
   return (
-    <aside className="fixed top-[57px] left-0 w-52 h-[calc(100vh-57px)] overflow-y-auto py-4 px-3 border-r border-gray-200 bg-white/60 backdrop-blur z-30 space-y-3">
+    <aside className="fixed left-0 w-52 overflow-y-auto py-4 px-3 border-r border-gray-200 bg-white/60 backdrop-blur z-30 space-y-3"
+      style={{ top: headerHeight, height: `calc(100vh - ${headerHeight}px)` }}>
 
       {/* 구성원 섹션 */}
       <div>

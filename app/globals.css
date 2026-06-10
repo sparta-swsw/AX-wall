@@ -36,6 +36,11 @@ body::after {
 ::-webkit-scrollbar-track { background: #F1F3F5; }
 ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
 
+@keyframes marquee-js {
+  0%   { transform: translateX(var(--from)); }
+  100% { transform: translateX(var(--to)); }
+}
+
 @keyframes heartPop {
   0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
   40%  { transform: translate(-50%,-50%) scale(1.8); opacity: 1; }

@@ -1,23 +1,62 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/types';
 
-export default function GlobalNoticeBanner({ links }: { links: Link[] }) {
+interface Props {
+  links: Link[];
+  onOpenLink?: (id: string) => void;
+}
+
+const SPEED = 60;
+
+export default function GlobalNoticeBanner({ links, onOpenLink }: Props) {
   const active = links.filter((l) => l.notice_active && l.notice);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLSpanElement>(null);
+  const [animStyle, setAnimStyle] = useState<React.CSSProperties>({});
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (!containerRef.current || !contentRef.current) return;
+    const cw = containerRef.current.offsetWidth;
+    const tw = contentRef.current.scrollWidth;
+    const duration = (cw + tw + 40) / SPEED;
+
+    setAnimStyle({
+      ['--from' as string]: `${cw + 20}px`,
+      ['--to' as string]: `${-(tw + 20)}px`,
+      animation: `marquee-js ${duration}s linear infinite`,
+    });
+  }, [active.length, active.map(a => a.notice).join()]);
+
   if (active.length === 0) return null;
 
   return (
-    <div className="bg-amber-400 text-amber-950 px-4 py-2 text-sm font-medium shadow-sm">
-      <div className="max-w-6xl mx-auto flex flex-col gap-1">
-        {active.map((link) => (
-          <div key={link.id} className="flex items-start gap-2">
-            <span className="shrink-0 font-bold">[공지]</span>
+    <div
+      ref={containerRef}
+      className="bg-yellow-400 text-yellow-950 py-2 text-sm font-medium shadow-md overflow-hidden cursor-pointer"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <span
+        ref={contentRef}
+        className="inline-block whitespace-nowrap"
+        style={{ ...animStyle, animationPlayState: paused ? 'paused' : 'running' }}
+      >
+        {active.map((link, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-2 px-8 hover:underline"
+            onClick={() => onOpenLink?.(link.id)}
+          >
+            <span className="font-bold">[공지]</span>
             <span className="font-semibold">{link.title || link.url}</span>
-            <span className="mx-1">—</span>
+            <span className="mx-0.5 opacity-60">—</span>
             <span>{link.notice}</span>
-          </div>
+          </span>
         ))}
-      </div>
+      </span>
     </div>
   );
 }

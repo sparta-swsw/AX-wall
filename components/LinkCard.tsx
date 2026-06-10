@@ -77,19 +77,18 @@ export default function LinkCard({ link, currentUser, color, members, onDelete, 
         className={`rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-[245px] ${isHolding ? 'bg-gray-100' : 'bg-white'}`}
         style={{ borderTop: `4px solid ${color.border}` }}
       >
-        {link.notice_active && link.notice && (
-          <div className="bg-amber-50 border-b border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 shrink-0 truncate">
-            {link.notice}
-          </div>
-        )}
-
         <div className="relative w-full h-32 bg-gray-100 shrink-0">
           <Image src={link.image || '/placeholder.png'} alt={link.title ?? ''} fill
             className="object-cover"
             style={{ objectPosition: link.image ? 'center center' : 'center 65%' }}
             unoptimized />
+          {link.notice_active && link.notice && (
+            <div className="absolute top-0 left-0 right-0 z-10 bg-yellow-400/90 px-3 py-1 text-[10px] font-semibold text-yellow-950 truncate">
+              {link.notice}
+            </div>
+          )}
           {(categoryStyle || statusStyle) && (
-            <div className="absolute top-2 left-2 flex gap-1">
+            <div className={`absolute left-2 flex gap-1 ${link.notice_active && link.notice ? 'top-7' : 'top-2'}`}>
               {categoryStyle && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
                   style={{ background: categoryStyle.bg, color: categoryStyle.text }}>
@@ -123,7 +122,7 @@ export default function LinkCard({ link, currentUser, color, members, onDelete, 
               </a>
             )}
             {link.target && link.target.length > 0 && (
-              <div className="flex flex-wrap gap-1 overflow-hidden max-h-5 flex-1">
+              <div className="flex gap-1 overflow-hidden shrink">
                 {link.target.map((t) => (
                   <span key={t} className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded-md shrink-0">{t}</span>
                 ))}
