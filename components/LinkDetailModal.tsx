@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Link, Comment, AuthUser, LinkCategory, LinkTarget, LinkStatus } from '@/types';
 import { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';

@@ -28,7 +28,8 @@ export default function GlobalNoticeBanner({ links, onOpenLink }: Props) {
       ['--to' as string]: `${-(tw + 20)}px`,
       animation: `marquee-js ${duration}s linear infinite`,
     });
-  }, [active.length, active.map(a => a.notice).join()]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.length]);
 
   if (active.length === 0) return null;
 
