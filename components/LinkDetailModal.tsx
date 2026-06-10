@@ -1,0 +1,184 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import { Link, Comment, AuthUser } from '@/types';
+import CommentSection from './CommentSection';
+import { Avatar } from './ProfileDropdown';
+
+type Member = { id: string; name: string; avatar_url?: string | null };
+
+interface Props {
+  link: Link;
+  currentUser: AuthUser;
+  members: Member[];
+  onClose: () => void;
+  onDelete: (id: string) => void;
+  onUpdate: (link: Link) => void;
+}
+
+export default function LinkDetailModal({ link, currentUser, members, onClose, onDelete, onUpdate }: Props) {
+  const author = members.find((m) => m.name === link.author_name) ?? { name: link.author_name ?? '' };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mode, setMode] = useState<'view' | 'edit' | 'notice'>('view');
+  const [noticeText, setNoticeText] = useState(link.notice ?? '');
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [editForm, setEditForm] = useState({ title: link.title ?? '', url: link.url, memo: link.memo ?? '', usage_url: link.usage_url ?? '' });
+  const [editLoading, setEditLoading] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isOwner = link.author_id === currentUser.id;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleLike = async () => {
+    if (likeLoading) return;
+    setLikeLoading(true);
+    try {
+      const res = await fetch('/api/likes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ link_id: link.id }) });
+      const data = await res.json();
+      if (res.ok) onUpdate({ ...link, liked_by_me: data.liked, likes_count: data.liked ? link.likes_count + 1 : link.likes_count - 1 });
+    } finally { setLikeLoading(false); }
+  };
+
+  const handleDelete = async () => {
+    setMenuOpen(false);
+    if (!confirm('삭제하시겠습니까?')) return;
+    await fetch(`/api/links/${link.id}`, { method: 'DELETE' });
+    onDelete(link.id); onClose();
+  };
+
+  const handleEditSave = async () => {
+    if (!editForm.title.trim() || !editForm.url.trim() || editLoading) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/links/${link.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: editForm.title.trim(), url: editForm.url.trim(), memo: editForm.memo.trim() || null, usage_url: editForm.usage_url.trim() || null }) });
+      if (res.ok) { const data = await res.json(); onUpdate({ ...link, ...data }); setMode('view'); }
+    } finally { setEditLoading(false); }
+  };
+
+  const handleNoticeSave = async (active: boolean) => {
+    const res = await fetch(`/api/links/${link.id}/notice`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notice: noticeText, notice_active: active }) });
+    if (res.ok) { const data = await res.json(); onUpdate({ ...link, notice: data.notice, notice_active: data.notice_active }); setMode('view'); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+
+        {/* 고정 헤더 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-3">
+            <Avatar user={author} size={28} />
+            <span className="font-semibold text-gray-900 text-sm truncate">{link.title || link.url}</span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {isOwner && (
+              <div ref={menuRef} className="relative">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors text-lg"
+                >
+                  ···
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-10">
+                    <button onClick={() => { setMode('edit'); setMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">수정</button>
+                    <button onClick={() => { setMode('notice'); setMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${link.notice_active ? 'text-amber-600 font-medium' : 'text-gray-700'}`}>
+                      공지 {link.notice_active ? '(ON)' : ''}
+                    </button>
+                    <div className="border-t border-gray-100" />
+                    <button onClick={handleDelete} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-gray-50">삭제</button>
+                  </div>
+                )}
+              </div>
+            )}
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">✕</button>
+          </div>
+        </div>
+
+        {/* 스크롤 영역 */}
+        <div className="overflow-y-auto flex-1">
+          {link.notice_active && link.notice && (
+            <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 text-sm font-semibold text-amber-700">
+              공지 — {link.notice}
+            </div>
+          )}
+
+          {link.image && mode === 'view' && (
+            <div className="relative w-full h-52 bg-gray-100">
+              <Image src={link.image} alt={link.title ?? ''} fill className="object-cover" unoptimized />
+            </div>
+          )}
+
+          <div className="p-6 space-y-4">
+            {mode === 'edit' && (
+              <div className="space-y-3">
+                {([['제목', 'title'], ['링크', 'url'], ['사용법 링크 (선택)', 'usage_url']] as const).map(([label, field]) => (
+                  <div key={field}>
+                    <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                    <input value={editForm[field]} onChange={(e) => setEditForm((f) => ({ ...f, [field]: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400" />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">설명</label>
+                  <textarea value={editForm.memo} onChange={(e) => setEditForm((f) => ({ ...f, memo: e.target.value }))} rows={3}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400 resize-none" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setMode('view')} className="flex-1 py-2 border border-gray-200 text-gray-500 text-sm rounded-xl">취소</button>
+                  <button onClick={handleEditSave} disabled={editLoading} className="flex-1 py-2 bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-medium rounded-xl">{editLoading ? '저장 중...' : '저장'}</button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'notice' && (
+              <div className="space-y-3">
+                <label className="block text-sm text-gray-600 font-medium">공지 내용</label>
+                <textarea value={noticeText} onChange={(e) => setNoticeText(e.target.value)} placeholder="업데이트 중 안내 등" rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-400 resize-none" />
+                <div className="flex gap-2">
+                  <button onClick={() => setMode('view')} className="flex-1 py-2 border border-gray-200 text-gray-500 text-sm rounded-xl">취소</button>
+                  <button onClick={() => handleNoticeSave(true)} className="flex-1 py-2 bg-amber-400 hover:bg-amber-300 text-amber-950 text-sm font-semibold rounded-xl">공지 활성화</button>
+                  {link.notice_active && <button onClick={() => handleNoticeSave(false)} className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm rounded-xl">공지 해제</button>}
+                </div>
+              </div>
+            )}
+
+            {mode === 'view' && (
+              <>
+                <div>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-base font-bold text-gray-900 hover:text-indigo-600 transition-colors leading-snug">{link.title || link.url}</a>
+                  <p className="text-gray-400 text-xs mt-1 truncate">{link.url}</p>
+                </div>
+                {link.memo && <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-indigo-300 pl-3">{link.memo}</p>}
+                {link.usage_url && (
+                  <a href={link.usage_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
+                    사용법 보기
+                  </a>
+                )}
+                <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                  <button onClick={handleLike} disabled={likeLoading} className={`flex items-center gap-1.5 text-sm transition-colors ${link.liked_by_me ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'}`}>
+                    <span>{link.liked_by_me ? '♥' : '♡'}</span><span>{link.likes_count}</span>
+                  </button>
+                  <span className="text-gray-400 text-sm">댓글 {link.comments.length}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-100">
+                  <CommentSection linkId={link.id} comments={link.comments} currentUser={currentUser} members={members}
+                    onAdd={(c: Comment) => onUpdate({ ...link, comments: [...link.comments, c] })}
+                    onDelete={(id: string) => onUpdate({ ...link, comments: link.comments.filter((c) => c.id !== id) })} />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
