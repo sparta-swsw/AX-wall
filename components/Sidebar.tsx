@@ -23,9 +23,9 @@ const TARGETS = ['수강생', '전사', '팀', '파트', '트랙', '개인'];
 export default function Sidebar({ members, selected, onSelect, linkCounts, filterCategories, filterStatuses, filterTargets, onToggle, onClearFilters }: Props) {
   const [membersOpen, setMembersOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(true);
-  const [statusOpen, setStatusOpen] = useState(true);
-  const [targetOpen, setTargetOpen] = useState(true);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [targetOpen, setTargetOpen] = useState(false);
   const hasFilter = filterCategories.length + filterStatuses.length + filterTargets.length > 0;
 
   return (

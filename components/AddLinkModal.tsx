@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { handleBulletKeyDown } from '@/lib/autoBullet';
 import Image from 'next/image';
 import { Link, LinkCategory, LinkTarget, LinkStatus } from '@/types';
 
@@ -46,7 +47,7 @@ export default function AddLinkModal({ onAdd, onClose }: Props) {
   useEffect(() => { titleRef.current?.focus(); }, []);
 
   const toggleTarget = (t: LinkTarget) => {
-    setTargets((p) => p.includes(t) ? p.filter((x) => x !== t) : [...p, t]);
+    setTargets((p) => p.includes(t) ? p.filter((x) => x !== t) : p.length >= 3 ? p : [...p, t]);
   };
 
   const fetchPreview = async (targetUrl: string) => {
@@ -143,8 +144,8 @@ export default function AddLinkModal({ onAdd, onClose }: Props) {
                   ) : preview && (
                     <>
                       {preview.image && (
-                        <div className="relative w-full h-28 bg-gray-100">
-                          <Image src={preview.image} alt="" fill className="object-cover" unoptimized
+                        <div className="relative w-full h-44 bg-gray-100">
+                          <Image src={preview.image} alt="" fill className="object-cover object-top" unoptimized
                             onError={() => setPreview((p) => p ? { ...p, image: '' } : p)} />
                         </div>
                       )}
@@ -162,7 +163,9 @@ export default function AddLinkModal({ onAdd, onClose }: Props) {
           {/* 공통: 설명 */}
           <div>
             <label className="block text-xs text-gray-500 mb-1.5">설명 <span className="text-gray-400">(선택)</span></label>
-            <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="간단한 설명" rows={2}
+            <textarea value={memo} onChange={(e) => setMemo(e.target.value)}
+              onKeyDown={(e) => handleBulletKeyDown(e, memo, setMemo)}
+              placeholder={'간단한 설명 (불렛 사용 가능)'} rows={3}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-400 resize-none" />
           </div>
 

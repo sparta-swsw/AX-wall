@@ -1,8 +1,23 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Link, Comment, AuthUser, LinkCategory, LinkTarget, LinkStatus } from '@/types';
+import { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';
+import { handleBulletKeyDown } from '@/lib/autoBullet';
+import FloatingTooltip from './FloatingTooltip';
+
+function renderMemo(text: string) {
+  return text.split('\n').filter(l => l.trim()).map((line, i) => {
+    const isBullet = /^[-•]\s/.test(line);
+    return (
+      <div key={i} className={isBullet ? 'flex gap-1' : ''}>
+        {isBullet && <span className="shrink-0">•</span>}
+        <span>{isBullet ? line.replace(/^[-•]\s/, '') : line}</span>
+      </div>
+    );
+  });
+}
 
 const CATEGORIES: LinkCategory[] = ['스킬', '배포', '자동화'];
 const TARGETS: LinkTarget[] = ['수강생', '전사', '팀', '파트', '트랙', '개인'];
@@ -36,6 +51,7 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
   const [likeLoading, setLikeLoading] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
   const [selfLikeMsg, setSelfLikeMsg] = useState(false);
+  const likeButtonRef = useRef<HTMLButtonElement>(null);
   const [editForm, setEditForm] = useState({
     title: link.title ?? '',
     url: link.url ?? '',
@@ -81,7 +97,8 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
   };
 
   const handleEditSave = async () => {
-    if (!editForm.title.trim() || !editForm.url.trim() || editLoading) return;
+    if (!editForm.title.trim() || editLoading) return;
+    if (editForm.category === '배포' && !editForm.url.trim()) return;
     setEditLoading(true);
     try {
       const res = await fetch(`/api/links/${link.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: editForm.title.trim(), url: editForm.url.trim() || null, memo: editForm.memo.trim() || null, usage_url: editForm.usage_url.trim() || null, category: editForm.category, status: editForm.status, target: editForm.target.length > 0 ? editForm.target : null, }) });
@@ -139,7 +156,7 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
 
           {link.image && mode === 'view' && (
             <div className="relative w-full h-52 bg-gray-100">
-              <Image src={link.image} alt={link.title ?? ''} fill className="object-cover" unoptimized />
+              <Image src={link.image} alt={link.title ?? ''} fill className="object-cover object-center" unoptimized />
             </div>
           )}
 
@@ -177,7 +194,9 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
                 {/* 설명 */}
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">설명</label>
-                  <textarea value={editForm.memo} onChange={(e) => setEditForm((f) => ({ ...f, memo: e.target.value }))} rows={2}
+                  <textarea value={editForm.memo} onChange={(e) => setEditForm((f) => ({ ...f, memo: e.target.value }))}
+                    onKeyDown={(e) => handleBulletKeyDown(e, editForm.memo, (v) => setEditForm((f) => ({ ...f, memo: v })))} rows={4}
+                    placeholder={'설명 입력 (불렛 사용 가능)'}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-400 resize-none" />
                 </div>
                 {/* 대상 */}
@@ -186,7 +205,7 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
                   <div className="flex flex-wrap gap-1.5">
                     {TARGETS.map((t) => (
                       <button key={t} type="button"
-                        onClick={() => setEditForm((f) => ({ ...f, target: f.target.includes(t) ? f.target.filter(x => x !== t) : [...f.target, t] }))}
+                        onClick={() => setEditForm((f) => ({ ...f, target: f.target.includes(t) ? f.target.filter(x => x !== t) : f.target.length >= 3 ? f.target : [...f.target, t] }))}
                         className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${editForm.target.includes(t) ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
                         {t}
                       </button>
@@ -235,6 +254,25 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
             {mode === 'view' && (
               <>
                 <div>
+                  {(link.category || link.status || (link.target && link.target.length > 0)) && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {link.category && CATEGORY_STYLE[link.category] && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
+                          style={{ background: CATEGORY_STYLE[link.category].bg, color: CATEGORY_STYLE[link.category].text }}>
+                          {CATEGORY_STYLE[link.category].label}
+                        </span>
+                      )}
+                      {link.status && STATUS_STYLE[link.status] && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
+                          style={{ background: STATUS_STYLE[link.status].bg, color: STATUS_STYLE[link.status].text }}>
+                          {link.status}
+                        </span>
+                      )}
+                      {link.target?.map((t) => (
+                        <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">{t}</span>
+                      ))}
+                    </div>
+                  )}
                   {link.url ? (
                     <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-base font-bold text-gray-900 hover:text-indigo-600 transition-colors leading-snug">{link.title || link.url}</a>
                   ) : (
@@ -242,21 +280,21 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
                   )}
                   {link.url && <p className="text-gray-400 text-xs mt-1 truncate">{link.url}</p>}
                 </div>
-                {link.memo && <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-indigo-300 pl-3">{link.memo}</p>}
+                {link.memo && (
+                  <div className="text-gray-600 text-sm leading-relaxed border-l-2 border-indigo-300 pl-3">
+                    {renderMemo(link.memo)}
+                  </div>
+                )}
                 {link.usage_url && (
                   <a href={link.usage_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
                     사용법 보기
                   </a>
                 )}
                 <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                  <button onClick={handleLike} disabled={likeLoading} className={`flex items-center gap-1.5 text-sm transition-colors ${link.liked_by_me ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'}`}>
+                  <FloatingTooltip visible={selfLikeMsg} anchorRef={likeButtonRef} text="내 AX는 신청할 수 없어요" />
+                  <button ref={likeButtonRef} onClick={handleLike} disabled={likeLoading} className={`flex items-center gap-1.5 text-sm transition-colors ${link.liked_by_me ? 'text-rose-500' : 'text-gray-400 hover:text-rose-400'}`}>
                     <span className="relative inline-block" style={{ fontSize: '1.1rem' }}>
                       {link.liked_by_me ? '♥' : '♡'}
-                      {selfLikeMsg && (
-                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap bg-gray-800 text-white text-xs px-2 py-1 rounded-lg pointer-events-none z-50">
-                          내 AX는 신청할 수 없어요
-                        </span>
-                      )}
                       {likeAnim && (
                         <>
                           <span className="heart-pop absolute text-rose-400 pointer-events-none" style={{ left: '50%', top: '50%', fontSize: '2rem' }}>♥</span>

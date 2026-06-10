@@ -68,7 +68,7 @@ function SortableItem({ link, currentUser, color, members, onDelete, onUpdate }:
       <div
         {...attributes}
         {...listeners}
-        className="absolute -top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-lg bg-white text-gray-400 cursor-grab active:cursor-grabbing shadow-sm border border-gray-200 text-sm font-bold opacity-0 group-hover/card:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded-lg bg-white/90 text-gray-400 cursor-grab active:cursor-grabbing shadow-sm border border-gray-200 text-sm font-bold opacity-0 group-hover/card:opacity-100 transition-opacity"
         style={{ touchAction: 'none' }}
         onClick={(e) => e.stopPropagation()}
       >
