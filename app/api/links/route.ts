@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, url, memo, usage_url, category, status, target, platform } = await request.json();
+  const { title, url, memo, usage_url, category, status, target } = await request.json();
   if (!title?.trim()) return NextResponse.json({ error: '제목을 입력해주세요.' }, { status: 400 });
 
   let ogDescription = null;
@@ -54,7 +54,6 @@ export async function POST(request: Request) {
       category: category ?? null,
       status: status ?? null,
       target: target ?? null,
-      platform: platform ?? null,
       author_id: user.id,
       author_name: user.name,
     })

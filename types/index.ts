@@ -19,7 +19,6 @@ export interface Link {
   category: LinkCategory | null;
   status: LinkStatus | null;
   target: LinkTarget[] | null;
-  platform: string | null;
   author_id: string | null;
   author_name: string | null;
   notice: string | null;

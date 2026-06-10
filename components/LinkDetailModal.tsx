@@ -44,7 +44,6 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
     category: link.category ?? null as LinkCategory | null,
     status: link.status ?? '기획 중' as LinkStatus,
     target: link.target ?? [] as LinkTarget[],
-    platform: link.platform ?? '',
   });
   const [editLoading, setEditLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -85,7 +84,7 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
     if (!editForm.title.trim() || !editForm.url.trim() || editLoading) return;
     setEditLoading(true);
     try {
-      const res = await fetch(`/api/links/${link.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: editForm.title.trim(), url: editForm.url.trim() || null, memo: editForm.memo.trim() || null, usage_url: editForm.usage_url.trim() || null, category: editForm.category, status: editForm.status, target: editForm.target.length > 0 ? editForm.target : null, platform: editForm.platform.trim() || null }) });
+      const res = await fetch(`/api/links/${link.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: editForm.title.trim(), url: editForm.url.trim() || null, memo: editForm.memo.trim() || null, usage_url: editForm.usage_url.trim() || null, category: editForm.category, status: editForm.status, target: editForm.target.length > 0 ? editForm.target : null, }) });
       if (res.ok) { const data = await res.json(); onUpdate({ ...link, ...data }); setMode('view'); }
     } finally { setEditLoading(false); }
   };
