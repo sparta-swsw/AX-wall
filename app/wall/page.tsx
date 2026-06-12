@@ -103,6 +103,12 @@ export default function WallPage() {
           ? { ...l, likes_count: Math.max(0, l.likes_count - 1), likers: (l.likers ?? []).filter((id) => id !== p.old.author_id) }
           : l));
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'members' }, (p) => {
+        setMembers((prev) => prev.map((m) => m.id === p.new.id
+          ? { ...m, avatar_url: p.new.avatar_url ?? null, color: p.new.color ?? null }
+          : m
+        ));
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
