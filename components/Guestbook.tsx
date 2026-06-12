@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AuthUser } from '@/types';
 import { Avatar } from './ProfileDropdown';
+import { supabase } from '@/lib/supabase';
 
 interface Entry {
   id: string;
@@ -54,6 +55,19 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
     fetch('/api/guestbook').then((r) => r.ok ? r.json() : []).then((data) => {
       setEntries(data.reverse());
     });
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase.channel('guestbook-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guestbook' }, (payload) => {
+        const entry = payload.new as Entry;
+        setEntries((prev) => prev.some((e) => e.id === entry.id) ? prev : [...prev, entry]);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'guestbook' }, (payload) => {
+        setEntries((prev) => prev.filter((e) => e.id !== (payload.old as Entry).id));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   useEffect(() => {

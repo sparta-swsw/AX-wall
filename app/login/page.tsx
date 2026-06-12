@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +40,10 @@ export default function LoginPage() {
             <div>
               <label className="block text-sm text-gray-500 mb-1.5">비밀번호</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 입력" autoComplete="current-password"
+                onKeyDown={(e) => setCapsLock(e.getModifierState('CapsLock'))}
+                onKeyUp={(e) => setCapsLock(e.getModifierState('CapsLock'))}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors" />
+              {capsLock && <p className="text-amber-500 text-xs mt-1">Caps Lock이 켜져 있습니다</p>}
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <button type="submit" disabled={loading} className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 disabled:bg-gray-200 disabled:text-gray-400 text-white font-medium rounded-xl transition-colors">
