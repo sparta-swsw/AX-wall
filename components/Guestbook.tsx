@@ -46,10 +46,13 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [hasUnread, setHasUnread] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionSuggestions, setMentionSuggestions] = useState<Member[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; if (open) setHasUnread(false); }, [open]);
 
   useEffect(() => {
     fetch('/api/guestbook').then((r) => r.ok ? r.json() : []).then((data) => {
@@ -62,6 +65,7 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guestbook' }, (payload) => {
         const entry = payload.new as Entry;
         setEntries((prev) => prev.some((e) => e.id === entry.id) ? prev : [...prev, entry]);
+        if (!openRef.current) setHasUnread(true);
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'guestbook' }, (payload) => {
         setEntries((prev) => prev.filter((e) => e.id !== (payload.old as Entry).id));
@@ -139,12 +143,17 @@ export default function Guestbook({ currentUser, members, open, onOpenChange }: 
 
   return (
     <>
-      <button
-        onClick={() => setOpen(!open)}
-        className="fixed bottom-10 right-24 z-50 w-12 h-12 bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg flex items-center justify-center text-xl transition-all"
-      >
-        {open ? '✕' : '💬'}
-      </button>
+      <div className="fixed bottom-10 right-24 z-50">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-12 h-12 bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg flex items-center justify-center text-xl transition-all"
+        >
+          {open ? '✕' : '💬'}
+        </button>
+        {hasUnread && !open && (
+          <span className="absolute -top-1 -left-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+        )}
+      </div>
 
       {open && (
         <div
