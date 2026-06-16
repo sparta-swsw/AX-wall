@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface Notification {
   id: string;
@@ -21,11 +22,12 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 interface Props {
+  currentUserId: string;
   onOpenLink: (linkId: string) => void;
   onOpenGuestbook: () => void;
 }
 
-export default function NotificationBell({ onOpenLink, onOpenGuestbook }: Props) {
+export default function NotificationBell({ currentUserId, onOpenLink, onOpenGuestbook }: Props) {
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -37,9 +39,22 @@ export default function NotificationBell({ onOpenLink, onOpenGuestbook }: Props)
 
   useEffect(() => {
     fetchNotifs();
-    const id = setInterval(fetchNotifs, 30000);
-    return () => clearInterval(id);
   }, [fetchNotifs]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase.channel('notifications-realtime')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `recipient_id=eq.${currentUserId}`,
+      }, (p) => {
+        setNotifs((prev) => [p.new as Notification, ...prev]);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUserId]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

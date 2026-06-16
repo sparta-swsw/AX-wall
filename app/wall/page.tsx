@@ -216,6 +216,7 @@ export default function WallPage() {
           </div>
           <div className="flex items-center gap-2 ml-auto">
             <NotificationBell
+              currentUserId={currentUser.id}
               onOpenLink={(id) => { const link = links.find((l) => l.id === id); if (link) setFocusedLink(link); }}
               onOpenGuestbook={() => setGuestbookOpen(true)}
             />
