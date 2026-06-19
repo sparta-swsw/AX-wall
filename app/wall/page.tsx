@@ -309,7 +309,6 @@ export default function WallPage() {
                       </div>
                       <div>
                         <p className="font-bold text-gray-900 text-lg leading-tight">{selectedAuthor}</p>
-                        <p className="text-sm text-gray-400">AX {allFlat.length}개</p>
                       </div>
                       <button onClick={() => setSelectedAuthor(null)}
                         className="ml-auto text-gray-300 hover:text-gray-500 text-xl transition-colors">✕</button>
