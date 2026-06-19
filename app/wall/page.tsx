@@ -371,7 +371,7 @@ export default function WallPage() {
       </div>
 
       <Guestbook currentUser={currentUser} members={members} open={guestbookOpen} onOpenChange={setGuestbookOpen} />
-      <StickerLayer currentUser={currentUser} />
+      <StickerLayer />
 
       {focusedLink && typeof document !== 'undefined' && createPortal(
         <LinkDetailModal

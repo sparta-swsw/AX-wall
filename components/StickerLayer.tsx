@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AuthUser } from '@/types';
 import { supabase } from '@/lib/supabase';
 
 interface Sticker {
@@ -19,7 +18,7 @@ const EMOJIS = [
   '🙌', '👀', '💎', '🎨', '🍀', '🫶', '😎', '🤩',
 ];
 
-export default function StickerLayer({ currentUser }: { currentUser: AuthUser }) {
+export default function StickerLayer() {
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
