@@ -120,7 +120,6 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
   return (
     <>
       {stickers.map((s) => {
-        const isMe = s.author_id === currentUser.id;
         return (
           <div
             key={s.id}

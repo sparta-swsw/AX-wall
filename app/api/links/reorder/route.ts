@@ -15,8 +15,7 @@ export async function PUT(request: Request) {
     await supabaseAdmin
       .from('links')
       .update({ sort_order })
-      .eq('id', id)
-      .eq('author_id', user.id);
+      .eq('id', id);
   }
 
   return NextResponse.json({ success: true });
