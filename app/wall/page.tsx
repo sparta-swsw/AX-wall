@@ -298,6 +298,24 @@ export default function WallPage() {
             const pageCards = allFlat.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage);
             return (
               <div className="rounded-2xl px-5 pt-4 pb-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                {selectedAuthor && (() => {
+                  const authorMember = members.find(m => m.name === selectedAuthor);
+                  const color = getAuthorColor(selectedAuthor, members);
+                  return (
+                    <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+                      <div className="rounded-full shrink-0"
+                        style={{ boxShadow: `0 0 0 2px ${color.border}, 0 0 8px 2px ${color.border}50` }}>
+                        <Avatar user={authorMember ?? { name: selectedAuthor, color: color.border }} size={48} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 text-lg leading-tight">{selectedAuthor}</p>
+                        <p className="text-sm text-gray-400">AX {allFlat.length}개</p>
+                      </div>
+                      <button onClick={() => setSelectedAuthor(null)}
+                        className="ml-auto text-gray-300 hover:text-gray-500 text-xl transition-colors">✕</button>
+                    </div>
+                  );
+                })()}
                 {q && <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {allFlat.length}개</p>}
                 {allFlat.length === 0 ? (
                   <div className="text-center py-20 text-gray-400">
