@@ -45,6 +45,7 @@ interface Props {
 
 export default function LinkDetailModal({ link, currentUser, members, onClose, onDelete, onUpdate }: Props) {
   const author = members.find((m) => m.name === link.author_name) ?? { name: link.author_name ?? '' };
+  const authorColor = (author as { color?: string | null }).color || '#6366F1';
   const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<'view' | 'edit' | 'notice'>('view');
   const [noticeText, setNoticeText] = useState(link.notice ?? '');
@@ -118,7 +119,9 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
         {/* 고정 헤더 */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-3">
-            <Avatar user={author} size={28} />
+            <div className="shrink-0 rounded-full" style={{ boxShadow: `0 0 0 1.5px ${authorColor}, 0 0 5px 1px ${authorColor}60` }}>
+              <Avatar user={author} size={28} />
+            </div>
             <span className="font-semibold text-gray-900 text-sm truncate">{link.title || link.url}</span>
           </div>
           <div className="flex items-center gap-1 shrink-0">

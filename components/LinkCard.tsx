@@ -77,7 +77,7 @@ export default function LinkCard({ link, currentUser, color, members, showAuthor
     <>
       <div
         onClick={() => setShowDetail(true)}
-        className={`rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-[245px] ${isHolding ? 'bg-gray-100' : 'bg-white'}`}
+        className={`rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-[265px] ${isHolding ? 'bg-gray-100' : 'bg-white'}`}
         style={{ borderTop: `6px solid ${color.border}` }}
       >
         <div className="relative w-full h-32 bg-gray-100 shrink-0 overflow-hidden">
@@ -88,12 +88,6 @@ export default function LinkCard({ link, currentUser, color, members, showAuthor
           {link.notice_active && link.notice && (
             <div className="absolute top-0 left-0 right-0 z-10 bg-yellow-400/90 px-3 py-1 text-[10px] font-semibold text-yellow-950 truncate">
               {link.notice}
-            </div>
-          )}
-          {showAuthor && link.author_name && (
-            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full pl-0.5 pr-2 py-0.5 z-10">
-              <Avatar user={authorMember ?? { name: link.author_name, color: color.border }} size={16} />
-              <span className="text-white text-[10px] font-medium leading-none">{link.author_name}</span>
             </div>
           )}
           {(categoryStyle || statusStyle) && (
@@ -115,7 +109,14 @@ export default function LinkCard({ link, currentUser, color, members, showAuthor
         </div>
 
         <div className="px-3 py-2.5 flex flex-col flex-1 overflow-hidden">
-          <p className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2">{link.title || link.url}</p>
+          <div className="flex items-center gap-2">
+            {showAuthor && (
+              <div className="shrink-0 rounded-full" style={{ boxShadow: `0 0 0 1.5px ${color.border}, 0 0 5px 1px ${color.border}60` }}>
+                <Avatar user={authorMember ?? { name: link.author_name ?? '', color: color.border }} size={24} />
+              </div>
+            )}
+            <p className="font-semibold text-gray-900 text-lg leading-snug line-clamp-2">{link.title || link.url}</p>
+          </div>
           {link.memo && (
             <div className="text-gray-400 text-xs mt-1 leading-relaxed overflow-hidden">
               {renderMemoPreview(link.memo, 1)}

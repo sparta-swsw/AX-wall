@@ -258,7 +258,7 @@ export default function WallPage() {
               const filtered = applyFilters(tab === '배포 고려' ? links.filter(l => l.likes_count >= 2) : links.filter(l => l.liked_by_me));
               if (filtered.length === 0) return <p className="text-center py-10 text-gray-400 text-sm">{tab === '배포 고려' ? '사용 신청 2개 이상인 항목이 없습니다.' : '신청한 항목이 없습니다.'}</p>;
               return (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
                   {filtered.map((link) => {
                     const color = getAuthorColor(link.author_name ?? '', members);
                     return (

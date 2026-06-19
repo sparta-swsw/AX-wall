@@ -121,7 +121,7 @@ export default function SortableCardGrid({ links, currentUser, members, showAuth
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={links.map((l) => l.id)} strategy={rectSortingStrategy}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
           {links.map((link) => (
             <SortableItem
               key={link.id}

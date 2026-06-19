@@ -134,7 +134,7 @@ export function Avatar({ user, size = 32 }: { user: { name: string; avatar_url?:
 
   const inner = user.avatar_url ? (
     <div className="rounded-full overflow-hidden shrink-0" style={{ width: size, height: size }}>
-      <Image src={user.avatar_url} alt={user.name} width={size} height={size} className="object-cover" unoptimized />
+      <Image src={user.avatar_url} alt={user.name} width={size} height={size} className="w-full h-full object-cover" unoptimized />
     </div>
   ) : (
     <div className="rounded-full flex items-center justify-center shrink-0 text-white font-bold"
