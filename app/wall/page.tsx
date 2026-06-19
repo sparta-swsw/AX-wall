@@ -168,14 +168,6 @@ export default function WallPage() {
     );
   }
 
-  const linkedGroups = groupByAuthor(links);
-  const groups = [
-    ...linkedGroups,
-    ...members
-      .filter((m) => !linkedGroups.find((g) => g.name === m.name))
-      .map((m) => ({ name: m.name, links: [] as import('@/types').Link[], latestAt: '' })),
-  ];
-
   return (
     <div className="min-h-screen relative">
       <div className="sticky top-0 z-40" ref={(el) => { if (el) setHeaderHeight(el.offsetHeight); }}>
