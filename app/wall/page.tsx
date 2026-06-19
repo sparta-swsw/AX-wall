@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Link, AuthUser } from '@/types';
 import LinkCard from '@/components/LinkCard';
@@ -53,6 +53,9 @@ export default function WallPage() {
   const [memberResult, setMemberResult] = useState<{ added: string[]; skipped: string[] } | null>(null);
   const [memberError, setMemberError] = useState('');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [columns, setColumns] = useState(3);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const fetchLinks = useCallback(async () => {
     const res = await fetch('/api/links');
@@ -112,6 +115,20 @@ export default function WallPage() {
 
     return () => { supabase.removeChannel(channel); };
   }, [fetchLinks]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width;
+      setColumns(Math.max(1, Math.floor((width + 20) / (260 + 20))));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setCurrentPage(1); }, [search, selectedAuthor, filterCategories, filterStatuses, filterTargets, tab]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -276,6 +293,9 @@ export default function WallPage() {
               if (soDiff !== 0) return soDiff;
               return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
             });
+            const cardsPerPage = columns * 4;
+            const totalPages = Math.ceil(allFlat.length / cardsPerPage);
+            const pageCards = allFlat.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage);
             return (
               <div className="rounded-2xl px-5 pt-4 pb-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 {q && <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {allFlat.length}개</p>}
@@ -286,21 +306,44 @@ export default function WallPage() {
                       : <p>검색 결과가 없습니다.</p>}
                   </div>
                 ) : (
-                  <SortableCardGrid
-                    links={allFlat}
-                    currentUser={currentUser}
-                    members={members}
-                    showAuthor
-                    onDelete={(id) => setLinks(p => p.filter(l => l.id !== id))}
-                    onUpdate={(u) => setLinks(p => p.map(l => l.id === u.id ? u : l))}
-                    onReorder={(reordered) => {
-                      const withOrders = reordered.map((l, i) => ({ ...l, sort_order: (reordered.length - i) * 1000 }));
-                      setLinks(p => {
-                        const ids = new Set(withOrders.map(l => l.id));
-                        return [...withOrders, ...p.filter(l => !ids.has(l.id))];
-                      });
-                    }}
-                  />
+                  <>
+                    <div ref={gridRef}>
+                      <SortableCardGrid
+                        links={pageCards}
+                        currentUser={currentUser}
+                        members={members}
+                        showAuthor
+                        onDelete={(id) => setLinks(p => p.filter(l => l.id !== id))}
+                        onUpdate={(u) => setLinks(p => p.map(l => l.id === u.id ? u : l))}
+                        onReorder={(reordered) => {
+                          const withOrders = reordered.map((l, i) => ({ ...l, sort_order: (reordered.length - i) * 1000 }));
+                          setLinks(p => {
+                            const ids = new Set(withOrders.map(l => l.id));
+                            return [...withOrders, ...p.filter(l => !ids.has(l.id))];
+                          });
+                        }}
+                      />
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-5">
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1.5 text-sm rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >이전</button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                          <button key={n} onClick={() => setCurrentPage(n)}
+                            className={`w-8 h-8 text-sm rounded-xl transition-colors ${currentPage === n ? 'bg-indigo-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                          >{n}</button>
+                        ))}
+                        <button
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1.5 text-sm rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >다음</button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );
