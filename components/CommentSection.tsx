@@ -31,9 +31,9 @@ function CommentItem({ comment, replies, currentUser, members, linkId, onAdd, on
   const [loading, setLoading] = useState(false);
   const getMember = (name: string | null) => members.find((m) => m.name === name) ?? { name: name ?? '' };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/comments/${id}`, { method: 'DELETE' });
+  const handleDelete = (id: string) => {
     onDelete(id);
+    fetch(`/api/comments/${id}`, { method: 'DELETE' });
   };
 
   const handleReply = async (e: React.FormEvent) => {

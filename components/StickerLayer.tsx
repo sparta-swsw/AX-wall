@@ -86,9 +86,10 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!dragging.current) return;
-    const x = e.clientX + window.scrollX - dragging.current.ox;
-    const y = e.clientY + window.scrollY - dragging.current.oy;
-    setStickers((p) => p.map((s) => s.id === dragging.current!.id ? { ...s, x, y } : s));
+    const { id, ox, oy } = dragging.current;
+    const x = e.clientX + window.scrollX - ox;
+    const y = e.clientY + window.scrollY - oy;
+    setStickers((p) => p.map((s) => s.id === id ? { ...s, x, y } : s));
   }, []);
 
   const handleMouseUp = useCallback(() => {

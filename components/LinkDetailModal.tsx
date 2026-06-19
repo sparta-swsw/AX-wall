@@ -82,12 +82,14 @@ export default function LinkDetailModal({ link, currentUser, members, onClose, o
     }
     if (likeLoading) return;
     setLikeLoading(true);
-    if (!link.liked_by_me) { setLikeAnim(true); setTimeout(() => setLikeAnim(false), 600); }
+    const newLiked = !link.liked_by_me;
+    if (newLiked) { setLikeAnim(true); setTimeout(() => setLikeAnim(false), 600); }
+    onUpdate({ ...link, liked_by_me: newLiked, likes_count: newLiked ? link.likes_count + 1 : link.likes_count - 1 });
     try {
       const res = await fetch('/api/likes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ link_id: link.id }) });
-      const data = await res.json();
-      if (res.ok) onUpdate({ ...link, liked_by_me: data.liked, likes_count: data.liked ? link.likes_count + 1 : link.likes_count - 1 });
-    } finally { setLikeLoading(false); }
+      if (!res.ok) onUpdate(link);
+    } catch { onUpdate(link); }
+    finally { setLikeLoading(false); }
   };
 
   const handleDelete = async () => {
