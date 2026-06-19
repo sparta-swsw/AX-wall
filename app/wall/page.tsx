@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 import { getAuthorColor } from '@/lib/colors';
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/components/Sidebar';
+import SortableCardGrid from '@/components/SortableCardGrid';
 
 type Member = { id: string; name: string; avatar_url?: string | null; color?: string | null };
 
@@ -278,7 +279,11 @@ export default function WallPage() {
                 (!q || l.author_name?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)) &&
                 (!selectedAuthor || l.author_name === selectedAuthor)
               )
-            ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            ).sort((a, b) => {
+              const soDiff = (b.sort_order ?? 0) - (a.sort_order ?? 0);
+              if (soDiff !== 0) return soDiff;
+              return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            });
             return (
               <div className="rounded-2xl px-5 pt-4 pb-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
                 {q && <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {allFlat.length}개</p>}
@@ -289,17 +294,21 @@ export default function WallPage() {
                       : <p>검색 결과가 없습니다.</p>}
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                    {allFlat.map(link => {
-                      const color = getAuthorColor(link.author_name ?? '', members);
-                      return (
-                        <LinkCard key={link.id} link={link} currentUser={currentUser} color={color} members={members}
-                          showAuthor
-                          onDelete={(id) => setLinks(p => p.filter(l => l.id !== id))}
-                          onUpdate={(u) => setLinks(p => p.map(l => l.id === u.id ? u : l))} />
-                      );
-                    })}
-                  </div>
+                  <SortableCardGrid
+                    links={allFlat}
+                    currentUser={currentUser}
+                    members={members}
+                    showAuthor
+                    onDelete={(id) => setLinks(p => p.filter(l => l.id !== id))}
+                    onUpdate={(u) => setLinks(p => p.map(l => l.id === u.id ? u : l))}
+                    onReorder={(reordered) => {
+                      const withOrders = reordered.map((l, i) => ({ ...l, sort_order: (reordered.length - i) * 1000 }));
+                      setLinks(p => {
+                        const ids = new Set(withOrders.map(l => l.id));
+                        return [...withOrders, ...p.filter(l => !ids.has(l.id))];
+                      });
+                    }}
+                  />
                 )}
               </div>
             );

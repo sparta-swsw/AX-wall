@@ -39,20 +39,22 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Link, AuthUser } from '@/types';
 import LinkCard from './LinkCard';
+import { getAuthorColor } from '@/lib/colors';
 
-type Member = { id: string; name: string; avatar_url?: string | null };
+type Member = { id: string; name: string; avatar_url?: string | null; color?: string | null };
 
 interface SortableItemProps {
   link: Link;
   currentUser: AuthUser;
-  color: { bg: string; border: string };
   members: Member[];
+  showAuthor?: boolean;
   onDelete: (id: string) => void;
   onUpdate: (link: Link) => void;
 }
 
-function SortableItem({ link, currentUser, color, members, onDelete, onUpdate }: SortableItemProps) {
+function SortableItem({ link, currentUser, members, showAuthor, onDelete, onUpdate }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id });
+  const color = getAuthorColor(link.author_name ?? '', members);
 
   return (
     <div
@@ -74,7 +76,7 @@ function SortableItem({ link, currentUser, color, members, onDelete, onUpdate }:
       >
         ⠿
       </div>
-      <LinkCard link={link} currentUser={currentUser} color={color} members={members} onDelete={onDelete} onUpdate={onUpdate} />
+      <LinkCard link={link} currentUser={currentUser} color={color} members={members} showAuthor={showAuthor} onDelete={onDelete} onUpdate={onUpdate} />
     </div>
   );
 }
@@ -82,15 +84,14 @@ function SortableItem({ link, currentUser, color, members, onDelete, onUpdate }:
 interface Props {
   links: Link[];
   currentUser: AuthUser;
-  isOwner: boolean;
-  color: { bg: string; border: string };
   members: Member[];
+  showAuthor?: boolean;
   onDelete: (id: string) => void;
   onUpdate: (link: Link) => void;
   onReorder: (reordered: Link[]) => void;
 }
 
-export default function SortableCardGrid({ links, currentUser, isOwner, color, members, onDelete, onUpdate, onReorder }: Props) {
+export default function SortableCardGrid({ links, currentUser, members, showAuthor, onDelete, onUpdate, onReorder }: Props) {
   const sensors = useSensors(
     useSensor(SmartPointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -117,18 +118,6 @@ export default function SortableCardGrid({ links, currentUser, isOwner, color, m
     });
   };
 
-  if (!isOwner) {
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-        {links.map((link) => (
-          <div key={link.id}>
-            <LinkCard link={link} currentUser={currentUser} color={color} members={members} onDelete={onDelete} onUpdate={onUpdate} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={links.map((l) => l.id)} strategy={rectSortingStrategy}>
@@ -138,8 +127,8 @@ export default function SortableCardGrid({ links, currentUser, isOwner, color, m
               key={link.id}
               link={link}
               currentUser={currentUser}
-              color={color}
               members={members}
+              showAuthor={showAuthor}
               onDelete={onDelete}
               onUpdate={onUpdate}
             />
