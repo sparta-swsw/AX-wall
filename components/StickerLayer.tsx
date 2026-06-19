@@ -76,7 +76,6 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
   };
 
   const handleMouseDown = (e: React.MouseEvent, sticker: Sticker) => {
-    if (sticker.author_id !== currentUser.id) return;
     e.preventDefault();
     dragging.current = {
       id: sticker.id,
@@ -131,7 +130,7 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
             style={{
               left: s.x,
               top: s.y,
-              cursor: isMe ? 'grab' : 'default',
+              cursor: 'grab',
               filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
               transform: 'translate(-50%, -50%)',
             }}

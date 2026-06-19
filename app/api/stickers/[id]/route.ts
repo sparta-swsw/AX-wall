@@ -7,7 +7,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { x, y } = await request.json();
-  await supabaseAdmin.from('stickers').update({ x, y }).eq('id', params.id).eq('author_id', user.id);
+  await supabaseAdmin.from('stickers').update({ x, y }).eq('id', params.id);
   return NextResponse.json({ success: true });
 }
 
