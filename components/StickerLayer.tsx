@@ -68,6 +68,13 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
     await fetch(`/api/stickers/${id}`, { method: 'DELETE' });
   };
 
+  const handleDeleteAll = async () => {
+    if (!window.confirm('다른 구성원의 이모지도 모두 지워져요!\n지우시겠어요?')) return;
+    setShowPicker(false);
+    setStickers([]);
+    await fetch('/api/stickers', { method: 'DELETE' });
+  };
+
   const handleMouseDown = (e: React.MouseEvent, sticker: Sticker) => {
     if (sticker.author_id !== currentUser.id) return;
     e.preventDefault();
@@ -118,7 +125,7 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
           <div
             key={s.id}
             onMouseDown={(e) => handleMouseDown(e, s)}
-            onMouseEnter={() => isMe && setHoverId(s.id)}
+            onMouseEnter={() => setHoverId(s.id)}
             onMouseLeave={() => setHoverId(null)}
             className="absolute z-30 select-none"
             style={{
@@ -130,7 +137,7 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
             }}
           >
             <span style={{ fontSize: '3rem', lineHeight: 1 }}>{s.emoji}</span>
-            {hoverId === s.id && isMe && (
+            {hoverId === s.id && (
               <button
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => handleDelete(s.id)}
@@ -158,6 +165,12 @@ export default function StickerLayer({ currentUser }: { currentUser: AuthUser })
                 {emoji}
               </button>
             ))}
+            <button
+              onClick={handleDeleteAll}
+              className="col-span-6 mt-1 py-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            >
+              이모지 전체 삭제
+            </button>
           </div>
         )}
         <button

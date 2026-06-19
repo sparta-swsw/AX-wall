@@ -10,6 +10,14 @@ export async function GET() {
   return NextResponse.json(data ?? []);
 }
 
+export async function DELETE() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  await supabaseAdmin.from('stickers').delete().neq('id', '');
+  return NextResponse.json({ success: true });
+}
+
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

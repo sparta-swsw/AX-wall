@@ -15,6 +15,6 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  await supabaseAdmin.from('stickers').delete().eq('id', params.id).eq('author_id', user.id);
+  await supabaseAdmin.from('stickers').delete().eq('id', params.id);
   return NextResponse.json({ success: true });
 }
