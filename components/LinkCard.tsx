@@ -115,7 +115,7 @@ export default function LinkCard({ link, currentUser, color, members, showAuthor
                 <Avatar user={authorMember ?? { name: link.author_name ?? '', color: color.border }} size={24} />
               </div>
             )}
-            <p className="font-semibold text-gray-900 text-lg leading-snug line-clamp-2">{link.title || link.url}</p>
+            <p className="font-semibold text-gray-900 text-base leading-snug line-clamp-2">{link.title || link.url}</p>
           </div>
           {link.memo && (
             <div className="text-gray-400 text-xs mt-1 leading-relaxed overflow-hidden">
