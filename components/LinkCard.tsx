@@ -7,6 +7,7 @@ import { Link, AuthUser } from '@/types';
 import LinkDetailModal from './LinkDetailModal';
 import { CATEGORY_STYLE, STATUS_STYLE } from '@/lib/badge';
 import FloatingTooltip from './FloatingTooltip';
+import { Avatar } from './ProfileDropdown';
 
 type Member = { id: string; name: string; avatar_url?: string | null; color?: string | null };
 
@@ -15,6 +16,7 @@ interface Props {
   currentUser: AuthUser;
   color: { bg: string; border: string };
   members: Member[];
+  showAuthor?: boolean;
   onDelete: (id: string) => void;
   onUpdate: (link: Link) => void;
 }
@@ -38,7 +40,8 @@ function renderMemoPreview(text: string, maxLines = 3) {
   );
 }
 
-export default function LinkCard({ link, currentUser, color, members, onDelete, onUpdate }: Props) {
+export default function LinkCard({ link, currentUser, color, members, showAuthor, onDelete, onUpdate }: Props) {
+  const authorMember = showAuthor ? members.find(m => m.name === link.author_name) : undefined;
   const [showDetail, setShowDetail] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
@@ -85,6 +88,12 @@ export default function LinkCard({ link, currentUser, color, members, onDelete, 
           {link.notice_active && link.notice && (
             <div className="absolute top-0 left-0 right-0 z-10 bg-yellow-400/90 px-3 py-1 text-[10px] font-semibold text-yellow-950 truncate">
               {link.notice}
+            </div>
+          )}
+          {showAuthor && link.author_name && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full pl-0.5 pr-2 py-0.5 z-10">
+              <Avatar user={authorMember ?? { name: link.author_name, color: color.border }} size={16} />
+              <span className="text-white text-[10px] font-medium leading-none">{link.author_name}</span>
             </div>
           )}
           {(categoryStyle || statusStyle) && (

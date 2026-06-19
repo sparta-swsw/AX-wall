@@ -15,7 +15,6 @@ import { createPortal } from 'react-dom';
 import { getAuthorColor } from '@/lib/colors';
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/components/Sidebar';
-import SortableCardGrid from '@/components/SortableCardGrid';
 
 type Member = { id: string; name: string; avatar_url?: string | null; color?: string | null };
 
@@ -38,7 +37,6 @@ export default function WallPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [links, setLinks] = useState<Link[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [tab, setTab] = useState<'전체' | '배포 고려' | '내 신청'>('전체');
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
@@ -132,21 +130,6 @@ export default function WallPage() {
     if (data.skipped.length === 0) setTimeout(() => { setShowAddMemberModal(false); setMemberNames(''); setMemberResult(null); }, 1500);
   };
 
-  useEffect(() => {
-    if (!loading && members.length > 0) {
-      const linked = new Set(links.map(l => l.author_name).filter(Boolean) as string[]);
-      setCollapsed(new Set(members.filter(m => !linked.has(m.name)).map(m => m.name)));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
-  const toggleCollapse = (name: string) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name); else next.add(name);
-      return next;
-    });
-  };
 
   const handleColorChange = async (color: string) => {
     const c = color || null;
@@ -175,10 +158,6 @@ export default function WallPage() {
   };
 
   const q = search.trim().toLowerCase();
-  const hasFilter = filterCategories.length > 0 || filterStatuses.length > 0 || filterTargets.length > 0;
-  const filteredLinks = (q || hasFilter)
-    ? applyFilters(links.filter((l) => !q || l.author_name?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)))
-    : null;
 
   if (loading || !currentUser) {
     return (
@@ -283,6 +262,7 @@ export default function WallPage() {
                     const color = getAuthorColor(link.author_name ?? '', members);
                     return (
                       <LinkCard key={link.id} link={link} currentUser={currentUser} color={color} members={members}
+                        showAuthor
                         onDelete={(id) => setLinks((p) => p.filter((l) => l.id !== id))}
                         onUpdate={(u) => setLinks((p) => p.map((l) => l.id === u.id ? u : l))} />
                     );
@@ -291,81 +271,39 @@ export default function WallPage() {
               );
             })()}
           </div>
-        ) : filteredLinks ? (
-          <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-            {q && <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {filteredLinks.length}개</p>}
-            {filteredLinks.length === 0 ? (
-              <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                {filteredLinks.map((link) => {
-                  const color = getAuthorColor(link.author_name ?? '', members);
-                  return (
-                    <div key={link.id}>
-                      <div className="text-xs text-gray-400 mb-1 font-medium">{link.author_name}</div>
-                      <LinkCard link={link} currentUser={currentUser} color={color} members={members}
-                        onDelete={(id) => setLinks((p) => p.filter((l) => l.id !== id))}
-                        onUpdate={(u) => setLinks((p) => p.map((l) => l.id === u.id ? u : l))} />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : links.length === 0 ? (
-          <div className="text-center py-24 text-gray-400">
-            <p className="text-lg">아직 공유된 링크가 없습니다.</p>
-            <p className="text-sm mt-1">첫 번째 링크를 추가해보세요.</p>
-          </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
-            {[...groups]
-              .sort((a, b) => a.name === currentUser.name ? -1 : b.name === currentUser.name ? 1 : 0)
-              .filter((g) => !selectedAuthor || g.name === selectedAuthor)
-              .map((g) => ({ ...g, links: applyFilters(g.links) }))
-              .filter((g) => !hasFilter || g.links.length > 0)
-              .map((group) => {
-              const color = getAuthorColor(group.name, members);
-              const member = members.find((m) => m.name === group.name);
-              const isCollapsed = collapsed.has(group.name);
-              return (
-                <section
-                  key={group.name}
-                  className={`rounded-2xl px-5 pt-4 ${isCollapsed ? 'pb-4' : 'pb-5'}`}
-                  style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
-                >
-                  <div className={`flex items-center gap-3 relative ${isCollapsed ? 'mb-0' : 'mb-5'}`}>
-                    <button onClick={() => toggleCollapse(group.name)} className="flex items-center gap-3 min-w-0 text-left">
-                      <Avatar user={member ?? { name: group.name }} size={36} />
-                      <span className="font-bold text-gray-900">{group.name}</span>
-                      <span className="text-gray-400 text-sm">{group.links.length}개</span>
-                      <span className="text-gray-300 text-xs">{isCollapsed ? '▶' : '▼'}</span>
-                    </button>
-                    <div className="flex-1 h-px bg-gray-200" />
+          (() => {
+            const allFlat = applyFilters(
+              links.filter(l =>
+                (!q || l.author_name?.toLowerCase().includes(q) || l.title?.toLowerCase().includes(q)) &&
+                (!selectedAuthor || l.author_name === selectedAuthor)
+              )
+            ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            return (
+              <div className="rounded-2xl px-5 pt-4 pb-5" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(4px)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                {q && <p className="text-sm text-gray-400 mb-4">&quot;{search}&quot; 검색 결과 {allFlat.length}개</p>}
+                {allFlat.length === 0 ? (
+                  <div className="text-center py-20 text-gray-400">
+                    {links.length === 0
+                      ? <><p className="text-lg">아직 공유된 링크가 없습니다.</p><p className="text-sm mt-1">첫 번째 링크를 추가해보세요.</p></>
+                      : <p>검색 결과가 없습니다.</p>}
                   </div>
-                  {!isCollapsed && group.links.length === 0 && (
-                    <p className="text-sm text-gray-300 py-4 text-center">아직 등록한 AX가 없습니다</p>
-                  )}
-                  {!isCollapsed && group.links.length > 0 && <SortableCardGrid
-                    links={group.links}
-                    currentUser={currentUser}
-                    isOwner={group.name === currentUser.name}
-                    color={color}
-                    members={members}
-                    onDelete={(id) => setLinks((p) => p.filter((l) => l.id !== id))}
-                    onUpdate={(u) => setLinks((p) => p.map((l) => l.id === u.id ? u : l))}
-                    onReorder={(reordered) =>
-                      setLinks((p) => {
-                        const ids = new Set(reordered.map((l) => l.id));
-                        return [...reordered, ...p.filter((l) => !ids.has(l.id))];
-                      })
-                    }
-                  />}
-                </section>
-
-              );
-            })}
-          </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                    {allFlat.map(link => {
+                      const color = getAuthorColor(link.author_name ?? '', members);
+                      return (
+                        <LinkCard key={link.id} link={link} currentUser={currentUser} color={color} members={members}
+                          showAuthor
+                          onDelete={(id) => setLinks(p => p.filter(l => l.id !== id))}
+                          onUpdate={(u) => setLinks(p => p.map(l => l.id === u.id ? u : l))} />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()
         )}
 
       </main>
